@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bowen & Zi Qin — 6 December 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blush: #f7d6e0; --rose: #e8a0b4; --deep-rose: #c4728a;
+    --sky: #d0e8f5; --blue: #a8cfe0; --deep-blue: #6a9db8;
+    --gold: #c9a96e; --gold-light: #e8d5a3;
+    --text-dark: #3a2a2a; --text-mid: #7a5a5a; --text-light: #b08080;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow-x:hidden; }
+  body {
+    font-family:'Jost',sans-serif;
+    background:linear-gradient(135deg,#fce8f0 0%,#e8f4fc 50%,#fce8f0 100%);
+    min-height:100%;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background:
+      radial-gradient(circle at 20% 20%,rgba(232,160,180,0.2) 0%,transparent 50%),
+      radial-gradient(circle at 80% 80%,rgba(168,207,224,0.2) 0%,transparent 50%);
+    pointer-events:none; z-index:0;
+  }
+  .petal {
+    position:fixed; border-radius:60% 0 60% 0;
+    opacity:0; pointer-events:none; z-index:1;
+  }
+  @keyframes floatPetal {
+    0%   { transform:translateY(-20px) rotate(0deg); opacity:0; }
+    10%  { opacity:0.4; }
+    90%  { opacity:0.4; }
+    100% { transform:translateY(110vh) rotate(720deg); opacity:0; }
+  }
+  .page {
+    min-height:100vh; width:100%;
+    display:none; flex-direction:column;
+    align-items:center; justify-content:center;
+    position:relative; z-index:2;
+  }
+  .page.active { display:flex; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes riseIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes appear { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── ENVELOPE ── */
+  #pg-envelope { padding:40px 20px 60px; }
+  .env-hint {
+    font-family:'Cormorant Garamond',serif; font-size:12px;
+    letter-spacing:0.3em; color:var(--text-mid); text-transform:uppercase;
+    margin-bottom:32px; animation:riseIn 1s ease 0.5s both;
+  }
+  #env-wrap { cursor:pointer; animation:riseIn 1s ease 0.1s both; transition:filter 0.3s; }
+  #env-wrap:hover { filter:brightness(1.04); }
+  #env-body {
+    width:min(400px,88vw); height:min(270px,62vw);
+    background:linear-gradient(155deg,#fdf5f8,#f8edf5 40%,#eef4fd);
+    border-radius:3px; position:relative;
+    box-shadow:0 20px 56px rgba(196,114,138,0.18),0 4px 14px rgba(0,0,0,0.06);
+    transition:transform 0.4s,box-shadow 0.4s;
+  }
+  #env-wrap:hover #env-body { transform:translateY(-6px); box-shadow:0 28px 68px rgba(196,114,138,0.24); }
+  .env-side-l,.env-side-r { position:absolute; top:0; bottom:0; width:50%; pointer-events:none; }
+  .env-side-l { left:0; background:linear-gradient(135deg,#f5edf8,#ece8f5); clip-path:polygon(0 0,100% 50%,0 100%); }
+  .env-side-r { right:0; background:linear-gradient(225deg,#eef5fd,#e4edf8); clip-path:polygon(0 50%,100% 0,100% 100%); }
+  .env-btm { position:absolute; bottom:0; left:0; right:0; height:52%; background:linear-gradient(175deg,#f0e8f5,#e8f0f8); clip-path:polygon(0 100%,50% 0,100% 100%); pointer-events:none; z-index:1; }
+  #env-flap { position:absolute; top:0; left:0; right:0; height:52%; transform-origin:top center; transition:transform 1s cubic-bezier(0.4,0,0.2,1); z-index:5; pointer-events:none; }
+  .env-flap-face { position:absolute; inset:0; background:linear-gradient(155deg,#fce8f0,#f8e8f5 50%,#e8f0fc); clip-path:polygon(0 0,100% 0,50% 100%); }
+  #env-flap.open { transform:rotateX(180deg); }
+  #seal {
+    position:absolute; width:82px; height:82px;
+    top:50%; left:50%; transform:translate(-50%,-50%); z-index:8;
+    box-shadow:0 4px 18px rgba(196,114,138,0.45);
+    border-radius:50%;
+    transition:transform 0.35s,opacity 0.35s; pointer-events:none;
+    overflow:hidden;
+  }
+  #seal img {
+    width:100%; height:100%;
+    object-fit:cover; display:block;
+    border-radius:50%;
+    user-select:none; pointer-events:none;
+  }
+  #env-wrap:hover #seal { transform:translate(-50%,-50%) scale(1.07); }
+  .tap-hint { margin-top:24px; font-size:10px; letter-spacing:0.32em; color:var(--text-light); text-transform:uppercase; animation:riseIn 1s ease 1.6s both; }
+
+  /* ── MONTAGE ── */
+  #pg-montage { padding:0; background:#0d090b; justify-content:stretch; min-height:100vh; min-height:100dvh; }
+  .montage-wrap { position:relative; width:100%; height:100vh; height:100dvh; min-height:500px; overflow:hidden; }
+  .photo-slide { position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease; }
+  .photo-slide.active { opacity:1; }
+  .photo-slide.active .slide-bg { animation:kenBurns 5.5s ease forwards; }
+  @keyframes kenBurns { from{transform:scale(1.07)} to{transform:scale(1)} }
+  .slide-bg { position:absolute; inset:0; background-size:cover; background-position:center top; transform:scale(1.07); }
+  .slide-vignette { position:absolute; inset:0; background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.4) 100%); }
+  #photo-loading-overlay {
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:#0d090b; z-index:50; gap:20px; transition:opacity 0.6s ease;
+  }
+  #photo-loading-overlay.hidden { opacity:0; pointer-events:none; }
+  .plo-spinner { width:36px; height:36px; border:1.5px solid rgba(255,255,255,0.1); border-top-color:rgba(240,176,196,0.7); border-radius:50%; animation:spin 0.9s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .plo-bar-wrap { width:120px; height:1px; background:rgba(255,255,255,0.08); }
+  #plo-bar { height:100%; width:0%; background:rgba(240,176,196,0.5); transition:width 0.3s ease; }
+  .plo-text { font-family:'Cormorant Garamond',serif; font-size:13px; letter-spacing:0.25em; color:rgba(255,255,255,0.3); text-transform:uppercase; }
+  .montage-progress { position:absolute; top:0; left:0; right:0; height:2px; z-index:10; background:rgba(255,255,255,0.08); }
+  #slide-bar { height:100%; width:0%; background:rgba(255,255,255,0.5); transition:width 0.1s linear; }
+  .slide-dots { position:absolute; bottom:28px; left:0; right:0; display:flex; justify-content:center; gap:7px; z-index:10; }
+  .sdot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.25); transition:background 0.4s,transform 0.4s,width 0.4s; cursor:pointer; }
+  .sdot.active { background:rgba(255,255,255,0.85); transform:scale(1.3); width:16px; border-radius:3px; }
+  .snav { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.65); font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; user-select:none; transition:background 0.2s; }
+  .snav:hover { background:rgba(255,255,255,0.22); }
+  .snav-prev { left:14px; } .snav-next { right:14px; }
+  .skip-link { position:absolute; top:22px; right:20px; font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:rgba(255,255,255,0.3); cursor:pointer; z-index:20; transition:color 0.2s; padding:6px; }
+  .skip-link:hover { color:rgba(255,255,255,0.65); }
+
+  /* ── DETAILS ── */
+  #pg-details { padding:0 0 60px; justify-content:flex-start; animation:fadeIn 0.7s ease both; }
+  .band { width:100%; height:5px; background:linear-gradient(90deg,var(--blush),var(--rose),var(--sky),var(--blue),var(--rose),var(--blush)); background-size:300% 100%; animation:bandMove 5s linear infinite; flex-shrink:0; }
+  @keyframes bandMove { 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
+  .invite-card { width:100%; max-width:520px; margin:0 auto; padding:0 clamp(24px,6vw,56px); }
+  .card-top { padding-top:44px; text-align:center; }
+  .eyebrow { font-size:10px; letter-spacing:0.42em; color:var(--deep-rose); text-transform:uppercase; font-weight:300; margin-bottom:18px; opacity:0; }
+  .couple-names { font-family:'Cormorant Garamond',serif; font-size:clamp(38px,8vw,64px); font-weight:300; color:var(--text-dark); line-height:1.05; opacity:0; }
+  .couple-names .amp { display:block; font-style:italic; color:var(--deep-rose); font-size:0.52em; line-height:1.8; }
+  .divider { display:flex; align-items:center; gap:16px; margin:28px 0; opacity:0; }
+  .dline { flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--gold-light),transparent); }
+  .ddot { width:7px; height:7px; background:var(--gold); transform:rotate(45deg); opacity:0.6; }
+  .dear-line { font-family:'Cormorant Garamond',serif; font-size:clamp(16px,2.8vw,20px); font-style:italic; color:var(--text-mid); margin-bottom:12px; opacity:0; }
+  .tagline { font-family:'Cormorant Garamond',serif; font-size:clamp(15px,2.4vw,18px); font-style:italic; color:var(--text-mid); line-height:1.9; margin-bottom:32px; opacity:0; }
+  .details-block { background:rgba(247,214,224,0.15); border:1px solid rgba(201,169,110,0.2); border-radius:2px; padding:22px 26px; text-align:left; opacity:0; }
+  .detail-row { display:flex; align-items:baseline; gap:14px; padding:6px 0; border-bottom:1px solid rgba(201,169,110,0.1); }
+  .detail-row:last-child { border-bottom:none; }
+  .dlabel { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--deep-rose); min-width:60px; flex-shrink:0; font-weight:300; }
+  .dvalue { font-family:'Cormorant Garamond',serif; font-size:15px; color:var(--text-dark); line-height:1.5; }
+  .dvalue-sub { font-size:13px; color:var(--text-mid); display:block; }
+  .rsvp-cta { margin-top:32px; opacity:0; }
+  .rsvp-cta-btn { width:100%; padding:16px; background:linear-gradient(135deg,var(--rose),var(--deep-rose)); border:none; border-radius:2px; color:white; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:0.34em; text-transform:uppercase; cursor:pointer; font-weight:300; box-shadow:0 4px 20px rgba(196,114,138,0.3); transition:transform 0.2s,box-shadow 0.2s; }
+  .rsvp-cta-btn:hover { transform:translateY(-2px); box-shadow:0 7px 28px rgba(196,114,138,0.42); }
+
+  /* ── RSVP ── */
+  #pg-rsvp { padding:0 0 60px; justify-content:flex-start; animation:fadeIn 0.7s ease both; }
+  .rsvp-inner { width:100%; max-width:520px; margin:0 auto; padding:0 clamp(24px,6vw,56px); }
+  .rsvp-top { padding-top:40px; text-align:center; margin-bottom:28px; }
+  .rsvp-h { font-family:'Cormorant Garamond',serif; font-size:clamp(30px,5vw,42px); font-weight:300; color:var(--text-dark); margin-bottom:8px; }
+  .rsvp-sub { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--deep-rose); font-weight:300; }
+  .attend-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:22px; }
+  .att-btn { padding:14px; border:1.5px solid rgba(201,169,110,0.28); background:transparent; border-radius:2px; cursor:pointer; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:0.18em; color:var(--text-mid); text-transform:uppercase; font-weight:300; transition:all 0.25s; }
+  .att-btn:hover { border-color:var(--rose); background:rgba(247,214,224,0.2); color:var(--deep-rose); }
+  .att-btn.sel-yes { border-color:var(--deep-rose); background:rgba(247,214,224,0.4); color:var(--deep-rose); }
+  .att-btn.sel-no  { border-color:var(--deep-blue); background:rgba(208,232,245,0.4); color:var(--deep-blue); }
+  .rsvp-fields { display:flex; flex-direction:column; gap:16px; overflow:hidden; max-height:0; transition:max-height 0.6s ease; }
+  .rsvp-fields.open { max-height:700px; }
+  .flabel { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--deep-rose); display:block; margin-bottom:6px; font-weight:300; }
+  .finput,.fselect,.ftextarea { width:100%; padding:13px 15px; background:rgba(253,246,240,0.7); border:1px solid rgba(201,169,110,0.22); border-radius:2px; font-family:'Jost',sans-serif; font-size:14px; color:var(--text-dark); outline:none; transition:border-color 0.25s; font-weight:300; }
+  .finput:focus,.fselect:focus,.ftextarea:focus { border-color:var(--rose); }
+  .fselect { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c4728a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; background-size:10px; padding-right:38px; cursor:pointer; }
+  .ftextarea { min-height:88px; resize:vertical; line-height:1.6; }
+  input[type=number] { -moz-appearance:textfield; }
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+  .sub-btn { margin-top:4px; width:100%; padding:16px; background:linear-gradient(135deg,var(--rose),var(--deep-rose)); border:none; border-radius:2px; color:white; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:0.34em; text-transform:uppercase; font-weight:300; cursor:pointer; box-shadow:0 4px 20px rgba(196,114,138,0.28); transition:transform 0.2s,box-shadow 0.2s; }
+  .sub-btn:hover { transform:translateY(-2px); box-shadow:0 7px 28px rgba(196,114,138,0.4); }
+  .sub-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+  .decline-note { display:none; background:rgba(208,232,245,0.2); border:1px solid rgba(168,207,224,0.3); border-radius:2px; padding:24px; margin-top:14px; text-align:center; }
+  .decline-note.vis { display:block; }
+  .decline-note p { font-family:'Cormorant Garamond',serif; font-size:17px; font-style:italic; color:var(--deep-blue); line-height:1.75; }
+  .error-msg { display:none; padding:13px 16px; margin-top:10px; background:rgba(255,220,220,0.4); border:1px solid rgba(220,100,100,0.2); border-radius:2px; font-size:13px; color:#b05050; }
+  .error-msg.vis { display:block; }
+  #success { display:none; text-align:center; padding:50px 20px; animation:riseIn 0.7s ease forwards; }
+  #success.vis { display:block; }
+  .s-icon { font-size:44px; margin-bottom:18px; }
+  .s-title { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300; color:var(--deep-rose); margin-bottom:10px; }
+  .s-body { font-size:14px; color:var(--text-mid); line-height:1.8; font-weight:300; max-width:340px; margin:0 auto; }
+
+  /* ── LOCKED ── */
+  #pg-locked { padding:40px; text-align:center; animation:fadeIn 1s ease both; }
+  .lock-icon { font-size:52px; margin-bottom:24px; animation:gentlePulse 3s ease-in-out infinite; }
+  @keyframes gentlePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+  .lock-title { font-family:'Cormorant Garamond',serif; font-size:clamp(28px,5vw,42px); color:var(--deep-rose); font-weight:300; margin-bottom:14px; }
+  .lock-body { font-size:13px; color:var(--text-light); font-weight:300; letter-spacing:0.08em; line-height:1.9; max-width:300px; }
+</style>
+</head>
+<body>
+
+<!-- LOCKED -->
+<div class="page" id="pg-locked">
+  <div class="lock-icon">✉️</div>
+  <h1 class="lock-title">Bowen &amp; Zi Qin</h1>
+  <p class="lock-body">This invitation is personalised.<br>Please use the unique link from your invitation to open this page.</p>
+</div>
+
+<!-- ENVELOPE -->
+<div class="page" id="pg-envelope">
+  <p class="env-hint">You have received an invitation</p>
+  <div id="env-wrap" onclick="openEnvelope()">
+    <div id="env-body">
+      <div class="env-side-l"></div><div class="env-side-r"></div>
+      <div class="env-btm"></div>
+      <div id="env-flap"><div class="env-flap-face"></div></div>
+      <div id="seal"><img src="seal.jpg" alt="B&amp;Z wax seal" draggable="false"></div>
+    </div>
+  </div>
+  <p class="tap-hint">— tap to open —</p>
+</div>
+
+<!-- PHOTO MONTAGE -->
+<div class="page" id="pg-montage">
+  <div class="montage-wrap" id="montageWrap">
+    <div id="photo-loading-overlay">
+      <div class="plo-spinner"></div>
+      <div class="plo-bar-wrap"><div id="plo-bar"></div></div>
+      <p class="plo-text">Loading your invitation</p>
+    </div>
+    <div class="montage-progress"><div id="slide-bar"></div></div>
+    <span class="skip-link" onclick="skipToDetails()">Skip ›</span>
+    <div class="snav snav-prev" onclick="prevPhoto()">&#8592;</div>
+    <div class="snav snav-next" onclick="nextPhoto()">&#8594;</div>
+    <div class="slide-dots" id="slideDots"></div>
+  </div>
+</div>
+
+<!-- INVITE DETAILS -->
+<div class="page" id="pg-details">
+  <div class="band"></div>
+  <div class="invite-card">
+    <div class="card-top">
+      <p class="eyebrow"        id="d1">Together with their families</p>
+      <h1 class="couple-names"  id="d2">Bowen <span class="amp">&amp;</span> Zi Qin</h1>
+      <div class="divider"      id="d3"><div class="dline"></div><div class="ddot"></div><div class="dline"></div></div>
+      <p class="dear-line"      id="d4">Dear <em id="guestName">Guest</em>,</p>
+      <p class="tagline"        id="d5">We joyfully invite you to join us<br>as we celebrate the beginning of our forever.</p>
+      <div class="details-block" id="d6">
+        <div class="detail-row"><span class="dlabel">Day</span><span class="dvalue">Saturday</span></div>
+        <div class="detail-row"><span class="dlabel">Date</span><span class="dvalue">6 December 2026</span></div>
+        <div class="detail-row"><span class="dlabel">Time</span><span class="dvalue">Lunch Banquet — 12:00 pm</span></div>
+        <div class="detail-row"><span class="dlabel">Venue</span>
+          <span class="dvalue">Paradox Singapore Merchant Court<span class="dvalue-sub">1 Merchant Road, Singapore 058282</span></span>
+        </div>
+        <div class="detail-row"><span class="dlabel">Dress</span><span class="dvalue">Smart casual · Avoid white &amp; black</span></div>
+      </div>
+    </div>
+    <div class="rsvp-cta" id="d7">
+      <button class="rsvp-cta-btn" onclick="showPage('pg-rsvp')">Kindly Reply ♡</button>
+    </div>
+  </div>
+</div>
+
+<!-- RSVP -->
+<div class="page" id="pg-rsvp">
+  <div class="band"></div>
+  <div class="rsvp-inner">
+    <div class="rsvp-top">
+      <h2 class="rsvp-h">Kindly Reply</h2>
+      <p class="rsvp-sub">Please respond by 31 October 2026</p>
+    </div>
+    <div id="rsvpFormArea">
+      <div class="attend-row">
+        <button class="att-btn" id="btnYes" onclick="selectAtt('yes')">✓ &nbsp;Joyfully Accepts</button>
+        <button class="att-btn" id="btnNo"  onclick="selectAtt('no')">✕ &nbsp;Regretfully Declines</button>
+      </div>
+      <div class="rsvp-fields" id="rsvpFields">
+        <div><label class="flabel">Number of guests attending</label><input class="finput" type="number" id="guestCount" min="1" max="5" value="1"></div>
+        <div><label class="flabel">Dietary restrictions</label>
+          <select class="fselect" id="dietary">
+            <option value="none">None</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+            <option value="halal">Halal</option>
+            <option value="gluten-free">Gluten-Free</option>
+            <option value="shellfish">No Shellfish</option>
+            <option value="other">Other — please note below</option>
+          </select>
+        </div>
+        <div><label class="flabel">Mailing address <span style="opacity:0.5;font-size:9px">(optional — for a keepsake)</span></label><input class="finput" type="text" id="address" placeholder="Block / Street, Unit, Postal Code"></div>
+        <div><label class="flabel">A message for the couple</label><textarea class="ftextarea" id="message" placeholder="Share your wishes or a favourite memory…"></textarea></div>
+        <button class="sub-btn" id="submitBtn" onclick="submitRsvp()">Send with Love ♡</button>
+        <div class="error-msg" id="errorMsg"></div>
+      </div>
+      <div class="decline-note" id="declineNote">
+        <p>We will miss you dearly.<br>Thank you for letting us know —<br>we will be thinking of you on our special day. 💙</p>
+        <button class="sub-btn" style="max-width:240px;margin:18px auto 0;display:block" id="declineBtn" onclick="submitRsvp()">Confirm Decline</button>
+        <div class="error-msg" id="errorMsgDecline"></div>
+      </div>
+    </div>
+    <div id="success">
+      <div class="s-icon">🌸</div>
+      <h3 class="s-title" id="sTitle">Thank you!</h3>
+      <p class="s-body"  id="sBody">Your RSVP has been received. We cannot wait to celebrate with you!</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIGURATION — paste your Apps Script URL here after Step 6
+// ══════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweaaM5HFWBl-fleTEFKIHX7IlMkI2Mdmvo-YrYDkeR0u0_EFks-8TsdP8xtdazyVR-YQ/exec';
+const PHOTO_COUNT     = 5;
+const SLIDE_DURATION  = 4000; // milliseconds per photo
+
+// ══════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════
+let guestId      = null;
+let guestData    = null;
+let photoDataUris = [];
+let cur          = 0;
+let slideTimer   = null;
+let progressTimer = null;
+let progElapsed  = 0;
+let montageReady = false;
+let att          = null;
+
+// ══════════════════════════════════════════════
+// Petals
+// ══════════════════════════════════════════════
+(function() {
+  const colors = ['#f7d6e0','#fce0ea','#e8a0b4','#d0e8f5','#b8d8ee','#f0e0f8'];
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const sz = 6 + Math.random() * 9;
+    p.style.cssText = `width:${sz}px;height:${sz*1.3}px;left:${Math.random()*100}vw;top:-20px;background:${colors[Math.floor(Math.random()*colors.length)]};animation:floatPetal ${9+Math.random()*12}s ${Math.random()*12}s linear infinite;`;
+    document.body.appendChild(p);
+  }
+})();
+
+// ══════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  guestId = params.get('id');
+  showPage(guestId ? 'pg-envelope' : 'pg-locked');
+});
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// Envelope
+// ══════════════════════════════════════════════
+let envOpened = false;
+function openEnvelope() {
+  if (envOpened) return;
+  envOpened = true;
+  document.getElementById('env-wrap').style.cursor = 'default';
+  document.getElementById('seal').style.opacity = '0';
+  setTimeout(() => document.getElementById('env-flap').classList.add('open'), 80);
+  setTimeout(() => {
+    const b = document.getElementById('env-body');
+    b.style.transition = 'transform 0.5s ease';
+    b.style.transform  = 'translateY(-14px)';
+  }, 600);
+  setTimeout(() => {
+    showPage('pg-montage');
+    loadPhotosAndStart();
+  }, 1100);
+}
+
+// ══════════════════════════════════════════════
+// Photo loading — all photos served via Apps Script
+// as base64 data URIs. No photo URLs ever in this file.
+// ══════════════════════════════════════════════
+async function loadPhotosAndStart() {
+  const ploBar = document.getElementById('plo-bar');
+  let loaded = 0;
+
+  const promises = Array.from({ length: PHOTO_COUNT }, (_, i) =>
+    fetch(`${APPS_SCRIPT_URL}?action=getPhoto&id=${encodeURIComponent(guestId)}&n=${i + 1}`)
+      .then(r => r.text())
+      .then(dataUri => {
+        loaded++;
+        ploBar.style.width = (loaded / PHOTO_COUNT * 100) + '%';
+        return dataUri;
+      })
+      .catch(() => null)
+  );
+
+  photoDataUris = await Promise.all(promises);
+  await new Promise(r => setTimeout(r, 350));
+
+  buildSlides();
+
+  const overlay = document.getElementById('photo-loading-overlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    startProgress();
+  }, 650);
+}
+
+function buildSlides() {
+  const wrap = document.getElementById('montageWrap');
+  const dots = document.getElementById('slideDots');
+
+  photoDataUris.forEach((uri, i) => {
+    const slide = document.createElement('div');
+    slide.className = 'photo-slide' + (i === 0 ? ' active' : '');
+    slide.id = `ps${i}`;
+
+    const bgStyle = (uri && uri.startsWith('data:'))
+      ? `background-image:url('${uri}')`
+      : `background:linear-gradient(160deg,#1a0d14,#0e1320)`;
+
+    slide.innerHTML = `<div class="slide-bg" style="${bgStyle}"></div><div class="slide-vignette"></div>`;
+    wrap.insertBefore(slide, wrap.querySelector('.snav-prev'));
+
+    const dot = document.createElement('div');
+    dot.className = 'sdot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goToPhoto(i);
+    dots.appendChild(dot);
+  });
+
+  montageReady = true;
+}
+
+// ══════════════════════════════════════════════
+// Montage navigation
+// ══════════════════════════════════════════════
+function goToPhoto(n) {
+  if (!montageReady) return;
+  clearTimeout(slideTimer);
+  clearInterval(progressTimer);
+  progElapsed = 0;
+
+  document.getElementById(`ps${cur}`).classList.remove('active');
+  document.querySelectorAll('.sdot')[cur].classList.remove('active');
+  cur = ((n % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT;
+  document.getElementById(`ps${cur}`).classList.add('active');
+  document.querySelectorAll('.sdot')[cur].classList.add('active');
+  startProgress();
+}
+
+function nextPhoto() { goToPhoto(cur + 1); }
+function prevPhoto() { goToPhoto(cur - 1); }
+
+function startProgress() {
+  const bar = document.getElementById('slide-bar');
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  progElapsed = 0;
+  const tick = 80;
+  clearInterval(progressTimer);
+
+  progressTimer = setInterval(() => {
+    progElapsed += tick;
+    bar.style.transition = `width ${tick}ms linear`;
+    bar.style.width = Math.min((progElapsed / SLIDE_DURATION) * 100, 100) + '%';
+    if (progElapsed >= SLIDE_DURATION) {
+      clearInterval(progressTimer);
+      if (cur < PHOTO_COUNT - 1) {
+        slideTimer = setTimeout(() => goToPhoto(cur + 1), 60);
+      } else {
+        slideTimer = setTimeout(() => transitionToDetails(), 800);
+      }
+    }
+  }, tick);
+}
+
+function skipToDetails() {
+  clearTimeout(slideTimer);
+  clearInterval(progressTimer);
+  transitionToDetails();
+}
+
+// ══════════════════════════════════════════════
+// Transition to details — fetch guest name
+// ══════════════════════════════════════════════
+async function transitionToDetails() {
+  if (!guestData) {
+    try {
+      const resp = await fetch(`${APPS_SCRIPT_URL}?action=getGuest&id=${encodeURIComponent(guestId)}`);
+      const data = await resp.json();
+      if (data.success) {
+        guestData = data.guest;
+        document.getElementById('guestName').textContent = guestData.name || 'Guest';
+        if (guestData.rsvped) {
+          showAlreadyRsvped();
+          return;
+        }
+      }
+    } catch(e) { /* non-fatal */ }
+  }
+  showPage('pg-details');
+  animateDetails();
+}
+
+function showAlreadyRsvped() {
+  showPage('pg-rsvp');
+  document.getElementById('rsvpFormArea').style.display = 'none';
+  const s = document.getElementById('success');
+  s.classList.add('vis');
+  const attending = guestData.attending === 'yes';
+  document.getElementById('sTitle').textContent = attending ? 'See you on the 6th!' : 'Thank you for letting us know';
+  document.getElementById('sBody').textContent  = attending
+    ? `You've already confirmed your attendance — we cannot wait to celebrate with you! 🌸`
+    : `You've already let us know you won't be able to make it. We will miss you!`;
+}
+
+function animateDetails() {
+  [['d1',200],['d2',380],['d3',540],['d4',680],['d5',820],['d6',980],['d7',1200]]
+    .forEach(([id, delay]) => {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.style.animation = 'appear 0.65s ease forwards';
+      }, delay);
+    });
+}
+
+// ══════════════════════════════════════════════
+// RSVP
+// ══════════════════════════════════════════════
+function selectAtt(v) {
+  att = v;
+  document.getElementById('btnYes').className = 'att-btn' + (v === 'yes' ? ' sel-yes' : '');
+  document.getElementById('btnNo').className  = 'att-btn' + (v === 'no'  ? ' sel-no'  : '');
+  document.getElementById('rsvpFields').classList.toggle('open', v === 'yes');
+  document.getElementById('declineNote').classList.toggle('vis', v === 'no');
+}
+
+async function submitRsvp() {
+  if (!att) { alert('Please select whether you will be attending.'); return; }
+  const isYes   = att === 'yes';
+  const btn     = document.getElementById(isYes ? 'submitBtn' : 'declineBtn');
+  const errorEl = document.getElementById(isYes ? 'errorMsg' : 'errorMsgDecline');
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  errorEl.classList.remove('vis');
+
+  const payload = {
+    action:     'submitRsvp',
+    id:          guestId,
+    attending:   att,
+    guestCount:  isYes ? (parseInt(document.getElementById('guestCount').value) || 1) : 0,
+    dietary:     isYes ? document.getElementById('dietary').value : '',
+    address:     isYes ? document.getElementById('address').value.trim() : '',
+    message:     isYes ? document.getElementById('message').value.trim() : '',
+  };
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const data = await resp.json();
+    if (data.success) {
+      document.getElementById('rsvpFormArea').style.display = 'none';
+      const s = document.getElementById('success');
+      s.classList.add('vis');
+      if (!isYes) {
+        document.getElementById('sTitle').textContent = 'Thank you for letting us know';
+        document.getElementById('sBody').textContent  = 'We will miss you dearly and will be thinking of you on our special day. 💙';
+      }
+    } else {
+      errorEl.textContent = data.message || 'Something went wrong. Please try again.';
+      errorEl.classList.add('vis');
+      btn.disabled = false;
+      btn.textContent = isYes ? 'Send with Love ♡' : 'Confirm Decline';
+    }
+  } catch(e) {
+    errorEl.textContent = 'Network error — please try again.';
+    errorEl.classList.add('vis');
+    btn.disabled = false;
+    btn.textContent = isYes ? 'Send with Love ♡' : 'Confirm Decline';
+  }
+}
+</script>
+</body>
+</html>
