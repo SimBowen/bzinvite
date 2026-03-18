@@ -75,6 +75,8 @@
     font-size:11px;letter-spacing:0.28em;
     color:rgba(255,255,255,0.25);text-transform:uppercase;
   }
+  .plo-track{width:140px;height:1px;background:rgba(255,255,255,0.08);}
+  #plo-bar{height:100%;width:0%;background:linear-gradient(90deg,rgba(240,176,196,0.6),rgba(200,218,240,0.6));transition:width 0.3s ease;}
 
   /* ════════════════════════════════════════
      MONTAGE — shared styles
@@ -310,6 +312,7 @@
         </g>
       </svg>
       <p class="loading-text">Preparing your invitation</p>
+      <div class="plo-track"><div id="plo-bar"></div></div>
     </div>
 
     <!-- Montage content injected by JS -->
@@ -483,8 +486,12 @@ function wreathReset() {
     const el = document.getElementById(b.id);
     if (!el) return;
     el.style.animation = 'none';
-    el.style.strokeDashoffset = el.style.strokeDasharray;
-    el.style.opacity = '0.1';
+    // Re-measure every cycle — animation overrides inline style so we must re-stamp
+    const L = el.getTotalLength ? el.getTotalLength() : 90;
+    el.style.strokeDasharray  = L;
+    el.style.strokeDashoffset = L;
+    el.style.setProperty('--L', L);
+    el.style.opacity = '0';
   });
   [...W_LEAVES, ...W_BLOOMS].forEach(id => {
     const el = document.getElementById(id);
@@ -572,11 +579,17 @@ function openEnvelope() {
 async function loadPhotosAndStart() {
   const prefix = isMobile ? 'p' : 'l'; // 'p' = portrait, 'l' = landscape
 
+  let loaded = 0;
   const promises = Array.from({ length: PHOTO_COUNT }, (_, i) =>
     fetch(`${APPS_SCRIPT_URL}?action=getPhoto&id=${encodeURIComponent(guestId)}&set=${prefix}&n=${i + 1}`)
       .then(r => r.text())
-      .then(dataUri => dataUri || null)
-      .catch(() => null)
+      .then(dataUri => {
+        loaded++;
+        const bar = document.getElementById('plo-bar');
+        if (bar) bar.style.width = (loaded / PHOTO_COUNT * 100) + '%';
+        return dataUri || null;
+      })
+      .catch(() => { loaded++; return null; })
   );
 
   const uris = await Promise.all(promises);
