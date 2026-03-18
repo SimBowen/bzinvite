@@ -595,7 +595,7 @@ async function loadPhotosAndStart() {
   setTimeout(() => {
     overlay.style.display = 'none';
     if (isMobile) {
-      // Mobile: no auto-advance — user scrolls
+      startMobileScroll();
     } else {
       startProgress();
     }
@@ -660,7 +660,7 @@ function buildDesktopSlides(wrap, uris) {
   wrap.appendChild(dots);
 }
 
-/* Mobile — vertical scroll strip, snap scroll */
+/* Mobile — vertical scroll strip, auto-scrolls between slides */
 function buildMobileStrip(wrap, uris) {
   const strip = document.createElement('div');
   strip.className = 'mobile-montage';
@@ -669,23 +669,54 @@ function buildMobileStrip(wrap, uris) {
   uris.forEach((uri, i) => {
     const slide = document.createElement('div');
     slide.className = 'mobile-slide';
+    slide.id = `ms${i}`;
     const bgStyle = (uri && uri.startsWith('data:'))
       ? `background-image:url('${uri}')`
       : 'background:linear-gradient(160deg,#1a0d14,#0e1320)';
     slide.innerHTML = `
       <div class="slide-bg" style="${bgStyle}"></div>
-      <div class="slide-vignette"></div>
-      ${i < uris.length - 1
-        ? `<div class="mobile-scroll-hint"><span>Scroll</span><div class="scroll-arrow"></div></div>`
-        : `<div class="mobile-continue"><button class="mobile-continue-btn" onclick="skipToDetails()">Continue ›</button></div>`
-      }`;
+      <div class="slide-vignette"></div>`;
     strip.appendChild(slide);
   });
 
   wrap.insertBefore(strip, wrap.querySelector('.montage-progress'));
+}
 
-  // Hide the progress bar on mobile — not needed for scroll
-  document.getElementById('slide-bar').parentElement.style.display = 'none';
+let mobileCur = 0;
+let mobileTimer = null;
+let mobileProgressTimer = null;
+let mobileProgElapsed = 0;
+
+function startMobileScroll() {
+  mobileCur = 0;
+  startMobileProgress();
+}
+
+function startMobileProgress() {
+  const bar = document.getElementById('slide-bar');
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  mobileProgElapsed = 0;
+  const tick = 80;
+  clearInterval(mobileProgressTimer);
+
+  mobileProgressTimer = setInterval(() => {
+    mobileProgElapsed += tick;
+    bar.style.transition = `width ${tick}ms linear`;
+    bar.style.width = Math.min((mobileProgElapsed / SLIDE_DURATION) * 100, 100) + '%';
+    if (mobileProgElapsed >= SLIDE_DURATION) {
+      clearInterval(mobileProgressTimer);
+      if (mobileCur < PHOTO_COUNT - 1) {
+        mobileCur++;
+        const strip = document.getElementById('mobileStrip');
+        const slideH = strip.clientHeight;
+        strip.scrollTo({ top: mobileCur * slideH, behavior: 'smooth' });
+        mobileTimer = setTimeout(startMobileProgress, 400);
+      } else {
+        mobileTimer = setTimeout(() => transitionToDetails(), 900);
+      }
+    }
+  }, tick);
 }
 
 // ══════════════════════════════════════════════
@@ -734,6 +765,8 @@ function startProgress() {
 function skipToDetails() {
   clearTimeout(slideTimer);
   clearInterval(progressTimer);
+  clearTimeout(mobileTimer);
+  clearInterval(mobileProgressTimer);
   transitionToDetails();
 }
 
