@@ -7,182 +7,244 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
 <style>
   :root {
-    --blush: #f7d6e0; --rose: #e8a0b4; --deep-rose: #c4728a;
-    --sky: #d0e8f5; --blue: #a8cfe0; --deep-blue: #6a9db8;
-    --gold: #c9a96e; --gold-light: #e8d5a3;
-    --text-dark: #3a2a2a; --text-mid: #7a5a5a; --text-light: #b08080;
+    --blush:#f7d6e0; --rose:#e8a0b4; --deep-rose:#c4728a;
+    --sky:#d0e8f5; --blue:#a8cfe0; --deep-blue:#6a9db8;
+    --gold:#c9a96e; --gold-light:#e8d5a3;
+    --text-dark:#3a2a2a; --text-mid:#7a5a5a; --text-light:#b08080;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100%; overflow-x:hidden; }
-  body {
-    font-family:'Jost',sans-serif;
-    background:linear-gradient(135deg,#fce8f0 0%,#e8f4fc 50%,#fce8f0 100%);
-    min-height:100%;
-  }
-  body::before {
-    content:''; position:fixed; inset:0;
-    background:
-      radial-gradient(circle at 20% 20%,rgba(232,160,180,0.2) 0%,transparent 50%),
-      radial-gradient(circle at 80% 80%,rgba(168,207,224,0.2) 0%,transparent 50%);
-    pointer-events:none; z-index:0;
-  }
-  .petal {
-    position:fixed; border-radius:60% 0 60% 0;
-    opacity:0; pointer-events:none; z-index:1;
-  }
-  @keyframes floatPetal {
-    0%   { transform:translateY(-20px) rotate(0deg); opacity:0; }
-    10%  { opacity:0.4; }
-    90%  { opacity:0.4; }
-    100% { transform:translateY(110vh) rotate(720deg); opacity:0; }
-  }
-  .page {
-    min-height:100vh; width:100%;
-    display:none; flex-direction:column;
-    align-items:center; justify-content:center;
-    position:relative; z-index:2;
-  }
-  .page.active { display:flex; }
-  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-  @keyframes riseIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes appear { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;overflow-x:hidden;}
+  body{font-family:'Jost',sans-serif;background:linear-gradient(135deg,#fce8f0 0%,#e8f4fc 50%,#fce8f0 100%);min-height:100%;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 20% 20%,rgba(232,160,180,0.2) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(168,207,224,0.2) 0%,transparent 50%);pointer-events:none;z-index:0;}
+  .petal{position:fixed;border-radius:60% 0 60% 0;opacity:0;pointer-events:none;z-index:1;}
+  @keyframes floatPetal{0%{transform:translateY(-20px) rotate(0deg);opacity:0;}10%{opacity:0.4;}90%{opacity:0.4;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+  .page{min-height:100vh;width:100%;display:none;flex-direction:column;align-items:center;justify-content:center;position:relative;z-index:2;}
+  .page.active{display:flex;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes riseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
   /* ── ENVELOPE ── */
-  #pg-envelope { padding:40px 20px 60px; }
-  .env-hint {
-    font-family:'Cormorant Garamond',serif; font-size:12px;
-    letter-spacing:0.3em; color:var(--text-mid); text-transform:uppercase;
-    margin-bottom:32px; animation:riseIn 1s ease 0.5s both;
+  #pg-envelope{padding:40px 20px 60px;}
+  .env-hint{font-family:'Cormorant Garamond',serif;font-size:12px;letter-spacing:0.3em;color:var(--text-mid);text-transform:uppercase;margin-bottom:32px;animation:riseIn 1s ease 0.5s both;}
+  #env-wrap{cursor:pointer;animation:riseIn 1s ease 0.1s both;transition:filter 0.3s;}
+  #env-wrap:hover{filter:brightness(1.04);}
+  #env-body{width:min(400px,88vw);height:min(270px,62vw);background:linear-gradient(155deg,#fdf5f8,#f8edf5 40%,#eef4fd);border-radius:3px;position:relative;box-shadow:0 20px 56px rgba(196,114,138,0.18),0 4px 14px rgba(0,0,0,0.06);transition:transform 0.4s,box-shadow 0.4s;}
+  #env-wrap:hover #env-body{transform:translateY(-6px);box-shadow:0 28px 68px rgba(196,114,138,0.24);}
+  .env-side-l,.env-side-r{position:absolute;top:0;bottom:0;width:50%;pointer-events:none;}
+  .env-side-l{left:0;background:linear-gradient(135deg,#f5edf8,#ece8f5);clip-path:polygon(0 0,100% 50%,0 100%);}
+  .env-side-r{right:0;background:linear-gradient(225deg,#eef5fd,#e4edf8);clip-path:polygon(0 50%,100% 0,100% 100%);}
+  .env-btm{position:absolute;bottom:0;left:0;right:0;height:52%;background:linear-gradient(175deg,#f0e8f5,#e8f0f8);clip-path:polygon(0 100%,50% 0,100% 100%);pointer-events:none;z-index:1;}
+  #env-flap{position:absolute;top:0;left:0;right:0;height:52%;transform-origin:top center;transition:transform 1s cubic-bezier(0.4,0,0.2,1);z-index:5;pointer-events:none;}
+  .env-flap-face{position:absolute;inset:0;background:linear-gradient(155deg,#fce8f0,#f8e8f5 50%,#e8f0fc);clip-path:polygon(0 0,100% 0,50% 100%);}
+  #env-flap.open{transform:rotateX(180deg);}
+  #seal{position:absolute;width:82px;height:82px;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;box-shadow:0 4px 18px rgba(196,114,138,0.45);border-radius:50%;transition:transform 0.35s,opacity 0.35s;pointer-events:none;overflow:hidden;}
+  #seal img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;user-select:none;pointer-events:none;}
+  #env-wrap:hover #seal{transform:translate(-50%,-50%) scale(1.07);}
+  .tap-hint{margin-top:24px;font-size:10px;letter-spacing:0.32em;color:var(--text-light);text-transform:uppercase;animation:riseIn 1s ease 1.6s both;}
+
+  /* ════════════════════════════════════════
+     LOADING OVERLAY — SVG floral animation
+  ════════════════════════════════════════ */
+  #photo-loading-overlay{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:#0d090b;z-index:50;gap:28px;
+    transition:opacity 0.7s ease;
   }
-  #env-wrap { cursor:pointer; animation:riseIn 1s ease 0.1s both; transition:filter 0.3s; }
-  #env-wrap:hover { filter:brightness(1.04); }
-  #env-body {
-    width:min(400px,88vw); height:min(270px,62vw);
-    background:linear-gradient(155deg,#fdf5f8,#f8edf5 40%,#eef4fd);
-    border-radius:3px; position:relative;
-    box-shadow:0 20px 56px rgba(196,114,138,0.18),0 4px 14px rgba(0,0,0,0.06);
-    transition:transform 0.4s,box-shadow 0.4s;
+  #photo-loading-overlay.hidden{opacity:0;pointer-events:none;}
+
+  /* Wreath SVG paths — stroke-dasharray set by JS after measuring */
+  .wreath-svg{overflow:visible;}
+  .wreath-path{
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
   }
-  #env-wrap:hover #env-body { transform:translateY(-6px); box-shadow:0 28px 68px rgba(196,114,138,0.24); }
-  .env-side-l,.env-side-r { position:absolute; top:0; bottom:0; width:50%; pointer-events:none; }
-  .env-side-l { left:0; background:linear-gradient(135deg,#f5edf8,#ece8f5); clip-path:polygon(0 0,100% 50%,0 100%); }
-  .env-side-r { right:0; background:linear-gradient(225deg,#eef5fd,#e4edf8); clip-path:polygon(0 50%,100% 0,100% 100%); }
-  .env-btm { position:absolute; bottom:0; left:0; right:0; height:52%; background:linear-gradient(175deg,#f0e8f5,#e8f0f8); clip-path:polygon(0 100%,50% 0,100% 100%); pointer-events:none; z-index:1; }
-  #env-flap { position:absolute; top:0; left:0; right:0; height:52%; transform-origin:top center; transition:transform 1s cubic-bezier(0.4,0,0.2,1); z-index:5; pointer-events:none; }
-  .env-flap-face { position:absolute; inset:0; background:linear-gradient(155deg,#fce8f0,#f8e8f5 50%,#e8f0fc); clip-path:polygon(0 0,100% 0,50% 100%); }
-  #env-flap.open { transform:rotateX(180deg); }
-  #seal {
-    position:absolute; width:82px; height:82px;
-    top:50%; left:50%; transform:translate(-50%,-50%); z-index:8;
-    box-shadow:0 4px 18px rgba(196,114,138,0.45);
-    border-radius:50%;
-    transition:transform 0.35s,opacity 0.35s; pointer-events:none;
+  /* Animate each path drawing itself */
+  .wreath-path.draw{
+    animation:drawPath 1.8s ease forwards;
+  }
+  @keyframes drawPath{
+    from{stroke-dashoffset:var(--len);}
+    to{stroke-dashoffset:0;}
+  }
+
+  /* Tiny blooms that appear after the wreath draws */
+  .bloom{
+    opacity:0;
+    transform-origin:center;
+    animation:bloomIn 0.5s ease forwards;
+  }
+  @keyframes bloomIn{
+    0%{opacity:0;transform:scale(0);}
+    70%{opacity:1;transform:scale(1.15);}
+    100%{opacity:1;transform:scale(1);}
+  }
+
+  .loading-monogram{
+    font-family:'Cormorant Garamond',serif;
+    font-size:22px;font-style:italic;
+    fill:rgba(240,176,196,0.7);
+    text-anchor:middle;
+    dominant-baseline:middle;
+    opacity:0;
+    animation:fadeIn 0.8s ease 2s forwards;
+  }
+  .loading-text{
+    font-family:'Cormorant Garamond',serif;
+    font-size:12px;letter-spacing:0.28em;
+    color:rgba(255,255,255,0.28);text-transform:uppercase;
+    opacity:0;animation:fadeIn 0.8s ease 2.2s forwards;
+  }
+
+  /* ════════════════════════════════════════
+     MONTAGE — shared styles
+  ════════════════════════════════════════ */
+  #pg-montage{padding:0;background:#0d090b;justify-content:stretch;min-height:100vh;min-height:100dvh;}
+  .montage-wrap{position:relative;width:100%;height:100vh;height:100dvh;min-height:500px;overflow:hidden;}
+  .slide-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.38) 100%);z-index:2;pointer-events:none;}
+  .montage-progress{position:absolute;top:0;left:0;right:0;height:2px;z-index:10;background:rgba(255,255,255,0.08);}
+  #slide-bar{height:100%;width:0%;background:rgba(255,255,255,0.5);transition:width 0.1s linear;}
+  .skip-link{position:absolute;top:22px;right:20px;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.3);cursor:pointer;z-index:20;transition:color 0.2s;padding:6px;}
+  .skip-link:hover{color:rgba(255,255,255,0.65);}
+
+  /* ── DESKTOP: fade crossfade, horizontal dots & arrows ── */
+  .desktop-montage .photo-slide{
+    position:absolute;inset:0;opacity:0;
+    transition:opacity 1.2s ease;
+  }
+  .desktop-montage .photo-slide.active{opacity:1;}
+  .desktop-montage .photo-slide.active .slide-bg{animation:kenBurns 5.5s ease forwards;}
+  @keyframes kenBurns{from{transform:scale(1.06)}to{transform:scale(1)}}
+  .desktop-montage .slide-bg{
+    position:absolute;inset:0;
+    background-size:cover;background-position:center center;
+    transform:scale(1.06);
+  }
+  .slide-dots{position:absolute;bottom:28px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:10;}
+  .sdot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.25);transition:background 0.4s,transform 0.4s,width 0.4s;cursor:pointer;}
+  .sdot.active{background:rgba(255,255,255,0.85);transform:scale(1.3);width:16px;border-radius:3px;}
+  .snav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.65);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;user-select:none;transition:background 0.2s;}
+  .snav:hover{background:rgba(255,255,255,0.22);}
+  .snav-prev{left:14px;}.snav-next{right:14px;}
+
+  /* ── MOBILE: vertical scroll strip ── */
+  .mobile-montage{
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    height:100%;
+    overflow-y:scroll;
+    overflow-x:hidden;
+    scroll-snap-type:y mandatory;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .mobile-montage::-webkit-scrollbar{display:none;}
+  .mobile-slide{
+    flex-shrink:0;
+    width:100%;
+    height:100vh;
+    height:100dvh;
+    scroll-snap-align:start;
+    position:relative;
     overflow:hidden;
   }
-  #seal img {
-    width:100%; height:100%;
-    object-fit:cover; display:block;
-    border-radius:50%;
-    user-select:none; pointer-events:none;
+  .mobile-slide .slide-bg{
+    position:absolute;inset:0;
+    background-size:cover;background-position:center center;
   }
-  #env-wrap:hover #seal { transform:translate(-50%,-50%) scale(1.07); }
-  .tap-hint { margin-top:24px; font-size:10px; letter-spacing:0.32em; color:var(--text-light); text-transform:uppercase; animation:riseIn 1s ease 1.6s both; }
-
-  /* ── MONTAGE ── */
-  #pg-montage { padding:0; background:#0d090b; justify-content:stretch; min-height:100vh; min-height:100dvh; }
-  .montage-wrap { position:relative; width:100%; height:100vh; height:100dvh; min-height:500px; overflow:hidden; }
-  .photo-slide { position:absolute; inset:0; opacity:0; transition:opacity 1.2s ease; }
-  .photo-slide.active { opacity:1; }
-  .photo-slide.active .slide-bg { animation:kenBurns 5.5s ease forwards; }
-  @keyframes kenBurns { from{transform:scale(1.07)} to{transform:scale(1)} }
-  .slide-bg { position:absolute; inset:0; background-size:cover; background-position:center top; transform:scale(1.07); }
-  .slide-vignette { position:absolute; inset:0; background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.4) 100%); }
-  #photo-loading-overlay {
-    position:absolute; inset:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:#0d090b; z-index:50; gap:20px; transition:opacity 0.6s ease;
+  /* Scroll indicator on mobile */
+  .mobile-scroll-hint{
+    position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    z-index:10;opacity:0;animation:fadeIn 0.6s ease 0.8s forwards;
+    pointer-events:none;
   }
-  #photo-loading-overlay.hidden { opacity:0; pointer-events:none; }
-  .plo-spinner { width:36px; height:36px; border:1.5px solid rgba(255,255,255,0.1); border-top-color:rgba(240,176,196,0.7); border-radius:50%; animation:spin 0.9s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .plo-bar-wrap { width:120px; height:1px; background:rgba(255,255,255,0.08); }
-  #plo-bar { height:100%; width:0%; background:rgba(240,176,196,0.5); transition:width 0.3s ease; }
-  .plo-text { font-family:'Cormorant Garamond',serif; font-size:13px; letter-spacing:0.25em; color:rgba(255,255,255,0.3); text-transform:uppercase; }
-  .montage-progress { position:absolute; top:0; left:0; right:0; height:2px; z-index:10; background:rgba(255,255,255,0.08); }
-  #slide-bar { height:100%; width:0%; background:rgba(255,255,255,0.5); transition:width 0.1s linear; }
-  .slide-dots { position:absolute; bottom:28px; left:0; right:0; display:flex; justify-content:center; gap:7px; z-index:10; }
-  .sdot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,0.25); transition:background 0.4s,transform 0.4s,width 0.4s; cursor:pointer; }
-  .sdot.active { background:rgba(255,255,255,0.85); transform:scale(1.3); width:16px; border-radius:3px; }
-  .snav { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.65); font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; user-select:none; transition:background 0.2s; }
-  .snav:hover { background:rgba(255,255,255,0.22); }
-  .snav-prev { left:14px; } .snav-next { right:14px; }
-  .skip-link { position:absolute; top:22px; right:20px; font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:rgba(255,255,255,0.3); cursor:pointer; z-index:20; transition:color 0.2s; padding:6px; }
-  .skip-link:hover { color:rgba(255,255,255,0.65); }
+  .mobile-scroll-hint span{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.35);}
+  .scroll-arrow{width:18px;height:18px;border-right:1px solid rgba(255,255,255,0.3);border-bottom:1px solid rgba(255,255,255,0.3);transform:rotate(45deg);animation:bounceArrow 1.4s ease infinite;}
+  @keyframes bounceArrow{0%,100%{transform:rotate(45deg) translateY(0);}50%{transform:rotate(45deg) translateY(4px);}}
+  /* Last mobile slide — "continue" prompt */
+  .mobile-continue{
+    position:absolute;bottom:40px;left:0;right:0;
+    display:flex;justify-content:center;z-index:10;
+  }
+  .mobile-continue-btn{
+    padding:13px 32px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.2);
+    border-radius:2px;color:rgba(255,255,255,0.75);
+    font-family:'Jost',sans-serif;font-size:10px;
+    letter-spacing:0.28em;text-transform:uppercase;
+    cursor:pointer;transition:background 0.2s;
+  }
+  .mobile-continue-btn:hover{background:rgba(255,255,255,0.2);}
 
   /* ── DETAILS ── */
-  #pg-details { padding:0 0 60px; justify-content:flex-start; animation:fadeIn 0.7s ease both; }
-  .band { width:100%; height:5px; background:linear-gradient(90deg,var(--blush),var(--rose),var(--sky),var(--blue),var(--rose),var(--blush)); background-size:300% 100%; animation:bandMove 5s linear infinite; flex-shrink:0; }
-  @keyframes bandMove { 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
-  .invite-card { width:100%; max-width:520px; margin:0 auto; padding:0 clamp(24px,6vw,56px); }
-  .card-top { padding-top:44px; text-align:center; }
-  .eyebrow { font-size:10px; letter-spacing:0.42em; color:var(--deep-rose); text-transform:uppercase; font-weight:300; margin-bottom:18px; opacity:0; }
-  .couple-names { font-family:'Cormorant Garamond',serif; font-size:clamp(38px,8vw,64px); font-weight:300; color:var(--text-dark); line-height:1.05; opacity:0; }
-  .couple-names .amp { display:block; font-style:italic; color:var(--deep-rose); font-size:0.52em; line-height:1.8; }
-  .divider { display:flex; align-items:center; gap:16px; margin:28px 0; opacity:0; }
-  .dline { flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--gold-light),transparent); }
-  .ddot { width:7px; height:7px; background:var(--gold); transform:rotate(45deg); opacity:0.6; }
-  .dear-line { font-family:'Cormorant Garamond',serif; font-size:clamp(16px,2.8vw,20px); font-style:italic; color:var(--text-mid); margin-bottom:12px; opacity:0; }
-  .tagline { font-family:'Cormorant Garamond',serif; font-size:clamp(15px,2.4vw,18px); font-style:italic; color:var(--text-mid); line-height:1.9; margin-bottom:32px; opacity:0; }
-  .details-block { background:rgba(247,214,224,0.15); border:1px solid rgba(201,169,110,0.2); border-radius:2px; padding:22px 26px; text-align:left; opacity:0; }
-  .detail-row { display:flex; align-items:baseline; gap:14px; padding:6px 0; border-bottom:1px solid rgba(201,169,110,0.1); }
-  .detail-row:last-child { border-bottom:none; }
-  .dlabel { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--deep-rose); min-width:60px; flex-shrink:0; font-weight:300; }
-  .dvalue { font-family:'Cormorant Garamond',serif; font-size:15px; color:var(--text-dark); line-height:1.5; }
-  .dvalue-sub { font-size:13px; color:var(--text-mid); display:block; }
-  .rsvp-cta { margin-top:32px; opacity:0; }
-  .rsvp-cta-btn { width:100%; padding:16px; background:linear-gradient(135deg,var(--rose),var(--deep-rose)); border:none; border-radius:2px; color:white; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:0.34em; text-transform:uppercase; cursor:pointer; font-weight:300; box-shadow:0 4px 20px rgba(196,114,138,0.3); transition:transform 0.2s,box-shadow 0.2s; }
-  .rsvp-cta-btn:hover { transform:translateY(-2px); box-shadow:0 7px 28px rgba(196,114,138,0.42); }
+  #pg-details{padding:0 0 60px;justify-content:flex-start;animation:fadeIn 0.7s ease both;}
+  .band{width:100%;height:5px;background:linear-gradient(90deg,var(--blush),var(--rose),var(--sky),var(--blue),var(--rose),var(--blush));background-size:300% 100%;animation:bandMove 5s linear infinite;flex-shrink:0;}
+  @keyframes bandMove{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+  .invite-card{width:100%;max-width:520px;margin:0 auto;padding:0 clamp(24px,6vw,56px);}
+  .card-top{padding-top:44px;text-align:center;}
+  .eyebrow{font-size:10px;letter-spacing:0.42em;color:var(--deep-rose);text-transform:uppercase;font-weight:300;margin-bottom:18px;opacity:0;}
+  .couple-names{font-family:'Cormorant Garamond',serif;font-size:clamp(38px,8vw,64px);font-weight:300;color:var(--text-dark);line-height:1.05;opacity:0;}
+  .couple-names .amp{display:block;font-style:italic;color:var(--deep-rose);font-size:0.52em;line-height:1.8;}
+  .divider{display:flex;align-items:center;gap:16px;margin:28px 0;opacity:0;}
+  .dline{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold-light),transparent);}
+  .ddot{width:7px;height:7px;background:var(--gold);transform:rotate(45deg);opacity:0.6;}
+  .dear-line{font-family:'Cormorant Garamond',serif;font-size:clamp(16px,2.8vw,20px);font-style:italic;color:var(--text-mid);margin-bottom:12px;opacity:0;}
+  .tagline{font-family:'Cormorant Garamond',serif;font-size:clamp(15px,2.4vw,18px);font-style:italic;color:var(--text-mid);line-height:1.9;margin-bottom:32px;opacity:0;}
+  .details-block{background:rgba(247,214,224,0.15);border:1px solid rgba(201,169,110,0.2);border-radius:2px;padding:22px 26px;text-align:left;opacity:0;}
+  .detail-row{display:flex;align-items:baseline;gap:14px;padding:6px 0;border-bottom:1px solid rgba(201,169,110,0.1);}
+  .detail-row:last-child{border-bottom:none;}
+  .dlabel{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);min-width:60px;flex-shrink:0;font-weight:300;}
+  .dvalue{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--text-dark);line-height:1.5;}
+  .dvalue-sub{font-size:13px;color:var(--text-mid);display:block;}
+  .rsvp-cta{margin-top:32px;opacity:0;}
+  .rsvp-cta-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--rose),var(--deep-rose));border:none;border-radius:2px;color:white;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.34em;text-transform:uppercase;cursor:pointer;font-weight:300;box-shadow:0 4px 20px rgba(196,114,138,0.3);transition:transform 0.2s,box-shadow 0.2s;}
+  .rsvp-cta-btn:hover{transform:translateY(-2px);box-shadow:0 7px 28px rgba(196,114,138,0.42);}
 
   /* ── RSVP ── */
-  #pg-rsvp { padding:0 0 60px; justify-content:flex-start; animation:fadeIn 0.7s ease both; }
-  .rsvp-inner { width:100%; max-width:520px; margin:0 auto; padding:0 clamp(24px,6vw,56px); }
-  .rsvp-top { padding-top:40px; text-align:center; margin-bottom:28px; }
-  .rsvp-h { font-family:'Cormorant Garamond',serif; font-size:clamp(30px,5vw,42px); font-weight:300; color:var(--text-dark); margin-bottom:8px; }
-  .rsvp-sub { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--deep-rose); font-weight:300; }
-  .attend-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:22px; }
-  .att-btn { padding:14px; border:1.5px solid rgba(201,169,110,0.28); background:transparent; border-radius:2px; cursor:pointer; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:0.18em; color:var(--text-mid); text-transform:uppercase; font-weight:300; transition:all 0.25s; }
-  .att-btn:hover { border-color:var(--rose); background:rgba(247,214,224,0.2); color:var(--deep-rose); }
-  .att-btn.sel-yes { border-color:var(--deep-rose); background:rgba(247,214,224,0.4); color:var(--deep-rose); }
-  .att-btn.sel-no  { border-color:var(--deep-blue); background:rgba(208,232,245,0.4); color:var(--deep-blue); }
-  .rsvp-fields { display:flex; flex-direction:column; gap:16px; overflow:hidden; max-height:0; transition:max-height 0.6s ease; }
-  .rsvp-fields.open { max-height:700px; }
-  .flabel { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--deep-rose); display:block; margin-bottom:6px; font-weight:300; }
-  .finput,.fselect,.ftextarea { width:100%; padding:13px 15px; background:rgba(253,246,240,0.7); border:1px solid rgba(201,169,110,0.22); border-radius:2px; font-family:'Jost',sans-serif; font-size:14px; color:var(--text-dark); outline:none; transition:border-color 0.25s; font-weight:300; }
-  .finput:focus,.fselect:focus,.ftextarea:focus { border-color:var(--rose); }
-  .fselect { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c4728a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; background-size:10px; padding-right:38px; cursor:pointer; }
-  .ftextarea { min-height:88px; resize:vertical; line-height:1.6; }
-  input[type=number] { -moz-appearance:textfield; }
-  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
-  .sub-btn { margin-top:4px; width:100%; padding:16px; background:linear-gradient(135deg,var(--rose),var(--deep-rose)); border:none; border-radius:2px; color:white; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:0.34em; text-transform:uppercase; font-weight:300; cursor:pointer; box-shadow:0 4px 20px rgba(196,114,138,0.28); transition:transform 0.2s,box-shadow 0.2s; }
-  .sub-btn:hover { transform:translateY(-2px); box-shadow:0 7px 28px rgba(196,114,138,0.4); }
-  .sub-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-  .decline-note { display:none; background:rgba(208,232,245,0.2); border:1px solid rgba(168,207,224,0.3); border-radius:2px; padding:24px; margin-top:14px; text-align:center; }
-  .decline-note.vis { display:block; }
-  .decline-note p { font-family:'Cormorant Garamond',serif; font-size:17px; font-style:italic; color:var(--deep-blue); line-height:1.75; }
-  .error-msg { display:none; padding:13px 16px; margin-top:10px; background:rgba(255,220,220,0.4); border:1px solid rgba(220,100,100,0.2); border-radius:2px; font-size:13px; color:#b05050; }
-  .error-msg.vis { display:block; }
-  #success { display:none; text-align:center; padding:50px 20px; animation:riseIn 0.7s ease forwards; }
-  #success.vis { display:block; }
-  .s-icon { font-size:44px; margin-bottom:18px; }
-  .s-title { font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300; color:var(--deep-rose); margin-bottom:10px; }
-  .s-body { font-size:14px; color:var(--text-mid); line-height:1.8; font-weight:300; max-width:340px; margin:0 auto; }
+  #pg-rsvp{padding:0 0 60px;justify-content:flex-start;animation:fadeIn 0.7s ease both;}
+  .rsvp-inner{width:100%;max-width:520px;margin:0 auto;padding:0 clamp(24px,6vw,56px);}
+  .rsvp-top{padding-top:40px;text-align:center;margin-bottom:28px;}
+  .rsvp-h{font-family:'Cormorant Garamond',serif;font-size:clamp(30px,5vw,42px);font-weight:300;color:var(--text-dark);margin-bottom:8px;}
+  .rsvp-sub{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);font-weight:300;}
+  .attend-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+  .att-btn{padding:14px;border:1.5px solid rgba(201,169,110,0.28);background:transparent;border-radius:2px;cursor:pointer;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--text-mid);text-transform:uppercase;font-weight:300;transition:all 0.25s;}
+  .att-btn:hover{border-color:var(--rose);background:rgba(247,214,224,0.2);color:var(--deep-rose);}
+  .att-btn.sel-yes{border-color:var(--deep-rose);background:rgba(247,214,224,0.4);color:var(--deep-rose);}
+  .att-btn.sel-no{border-color:var(--deep-blue);background:rgba(208,232,245,0.4);color:var(--deep-blue);}
+  .rsvp-fields{display:flex;flex-direction:column;gap:16px;overflow:hidden;max-height:0;transition:max-height 0.6s ease;}
+  .rsvp-fields.open{max-height:700px;}
+  .flabel{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);display:block;margin-bottom:6px;font-weight:300;}
+  .finput,.fselect,.ftextarea{width:100%;padding:13px 15px;background:rgba(253,246,240,0.7);border:1px solid rgba(201,169,110,0.22);border-radius:2px;font-family:'Jost',sans-serif;font-size:14px;color:var(--text-dark);outline:none;transition:border-color 0.25s;font-weight:300;}
+  .finput:focus,.fselect:focus,.ftextarea:focus{border-color:var(--rose);}
+  .fselect{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c4728a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:10px;padding-right:38px;cursor:pointer;}
+  .ftextarea{min-height:88px;resize:vertical;line-height:1.6;}
+  input[type=number]{-moz-appearance:textfield;}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+  .sub-btn{margin-top:4px;width:100%;padding:16px;background:linear-gradient(135deg,var(--rose),var(--deep-rose));border:none;border-radius:2px;color:white;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.34em;text-transform:uppercase;font-weight:300;cursor:pointer;box-shadow:0 4px 20px rgba(196,114,138,0.28);transition:transform 0.2s,box-shadow 0.2s;}
+  .sub-btn:hover{transform:translateY(-2px);box-shadow:0 7px 28px rgba(196,114,138,0.4);}
+  .sub-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+  .decline-note{display:none;background:rgba(208,232,245,0.2);border:1px solid rgba(168,207,224,0.3);border-radius:2px;padding:24px;margin-top:14px;text-align:center;}
+  .decline-note.vis{display:block;}
+  .decline-note p{font-family:'Cormorant Garamond',serif;font-size:17px;font-style:italic;color:var(--deep-blue);line-height:1.75;}
+  .error-msg{display:none;padding:13px 16px;margin-top:10px;background:rgba(255,220,220,0.4);border:1px solid rgba(220,100,100,0.2);border-radius:2px;font-size:13px;color:#b05050;}
+  .error-msg.vis{display:block;}
+  #success{display:none;text-align:center;padding:50px 20px;animation:riseIn 0.7s ease forwards;}
+  #success.vis{display:block;}
+  .s-icon{font-size:44px;margin-bottom:18px;}
+  .s-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:var(--deep-rose);margin-bottom:10px;}
+  .s-body{font-size:14px;color:var(--text-mid);line-height:1.8;font-weight:300;max-width:340px;margin:0 auto;}
 
   /* ── LOCKED ── */
-  #pg-locked { padding:40px; text-align:center; animation:fadeIn 1s ease both; }
-  .lock-icon { font-size:52px; margin-bottom:24px; animation:gentlePulse 3s ease-in-out infinite; }
-  @keyframes gentlePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-  .lock-title { font-family:'Cormorant Garamond',serif; font-size:clamp(28px,5vw,42px); color:var(--deep-rose); font-weight:300; margin-bottom:14px; }
-  .lock-body { font-size:13px; color:var(--text-light); font-weight:300; letter-spacing:0.08em; line-height:1.9; max-width:300px; }
+  #pg-locked{padding:40px;text-align:center;animation:fadeIn 1s ease both;}
+  .lock-icon{font-size:52px;margin-bottom:24px;animation:gentlePulse 3s ease-in-out infinite;}
+  @keyframes gentlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  .lock-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,5vw,42px);color:var(--deep-rose);font-weight:300;margin-bottom:14px;}
+  .lock-body{font-size:13px;color:var(--text-light);font-weight:300;letter-spacing:0.08em;line-height:1.9;max-width:300px;}
 </style>
 </head>
 <body>
@@ -211,16 +273,108 @@
 <!-- PHOTO MONTAGE -->
 <div class="page" id="pg-montage">
   <div class="montage-wrap" id="montageWrap">
+
+    <!-- Loading overlay — SVG floral wreath animation -->
     <div id="photo-loading-overlay">
-      <div class="plo-spinner"></div>
-      <div class="plo-bar-wrap"><div id="plo-bar"></div></div>
-      <p class="plo-text">Loading your invitation</p>
+      <svg class="wreath-svg" id="wreathSvg" width="220" height="220" viewBox="0 0 220 220">
+        <!-- Left branch — stem -->
+        <path class="wreath-path" id="wp0" d="M110,110 C95,100 75,92 58,88 C44,85 30,86 20,90"
+          stroke="rgba(240,176,196,0.55)" stroke-width="1.2"/>
+        <!-- Left branch — upper sprig -->
+        <path class="wreath-path" id="wp1" d="M70,94 C64,85 58,78 50,72 C44,68 36,66 30,68"
+          stroke="rgba(200,210,230,0.5)" stroke-width="1"/>
+        <!-- Left branch — lower sprig -->
+        <path class="wreath-path" id="wp2" d="M82,100 C78,108 72,114 64,118 C58,121 50,122 44,120"
+          stroke="rgba(240,176,196,0.45)" stroke-width="1"/>
+        <!-- Left branch — tip sprig -->
+        <path class="wreath-path" id="wp3" d="M46,88 C40,82 34,80 26,80 C20,80 14,82 10,86"
+          stroke="rgba(200,210,230,0.4)" stroke-width="0.9"/>
+        <!-- Right branch — stem -->
+        <path class="wreath-path" id="wp4" d="M110,110 C125,100 145,92 162,88 C176,85 190,86 200,90"
+          stroke="rgba(240,176,196,0.55)" stroke-width="1.2"/>
+        <!-- Right branch — upper sprig -->
+        <path class="wreath-path" id="wp5" d="M150,94 C156,85 162,78 170,72 C176,68 184,66 190,68"
+          stroke="rgba(200,210,230,0.5)" stroke-width="1"/>
+        <!-- Right branch — lower sprig -->
+        <path class="wreath-path" id="wp6" d="M138,100 C142,108 148,114 156,118 C162,121 170,122 176,120"
+          stroke="rgba(240,176,196,0.45)" stroke-width="1"/>
+        <!-- Right branch — tip sprig -->
+        <path class="wreath-path" id="wp7" d="M174,88 C180,82 186,80 194,80 C200,80 206,82 210,86"
+          stroke="rgba(200,210,230,0.4)" stroke-width="0.9"/>
+        <!-- Top left arch -->
+        <path class="wreath-path" id="wp8" d="M58,88 C55,75 57,60 62,48 C67,38 76,30 86,26"
+          stroke="rgba(240,176,196,0.5)" stroke-width="1.1"/>
+        <!-- Top right arch -->
+        <path class="wreath-path" id="wp9" d="M162,88 C165,75 163,60 158,48 C153,38 144,30 134,26"
+          stroke="rgba(240,176,196,0.5)" stroke-width="1.1"/>
+        <!-- Top centre arc -->
+        <path class="wreath-path" id="wp10" d="M86,26 C92,20 100,17 110,16 C120,17 128,20 134,26"
+          stroke="rgba(200,210,230,0.55)" stroke-width="1.1"/>
+        <!-- Small leaves scattered -->
+        <path class="wreath-path" id="wp11" d="M66,92 C63,87 65,82 69,81 C73,80 76,84 74,89 C72,94 67,95 66,92Z"
+          stroke="rgba(180,220,190,0.6)" stroke-width="0.8" fill="rgba(180,220,190,0.12)"/>
+        <path class="wreath-path" id="wp12" d="M154,92 C157,87 155,82 151,81 C147,80 144,84 146,89 C148,94 153,95 154,92Z"
+          stroke="rgba(180,220,190,0.6)" stroke-width="0.8" fill="rgba(180,220,190,0.12)"/>
+        <path class="wreath-path" id="wp13" d="M78,104 C75,99 77,94 81,93 C85,92 88,96 86,101 C84,106 79,107 78,104Z"
+          stroke="rgba(180,220,190,0.5)" stroke-width="0.8" fill="rgba(180,220,190,0.1)"/>
+        <path class="wreath-path" id="wp14" d="M142,104 C145,99 143,94 139,93 C135,92 132,96 134,101 C136,106 141,107 142,104Z"
+          stroke="rgba(180,220,190,0.5)" stroke-width="0.8" fill="rgba(180,220,190,0.1)"/>
+        <!-- Blooms — appear after branches draw -->
+        <!-- Left bloom -->
+        <g class="bloom" id="bl0" style="animation-delay:1.8s">
+          <circle cx="28" cy="90" r="5" fill="none" stroke="rgba(240,176,196,0.7)" stroke-width="0.8"/>
+          <circle cx="28" cy="90" r="2.5" fill="rgba(240,176,196,0.35)"/>
+          <circle cx="23" cy="87" r="3.5" fill="none" stroke="rgba(240,176,196,0.55)" stroke-width="0.7"/>
+          <circle cx="33" cy="87" r="3.5" fill="none" stroke="rgba(240,176,196,0.55)" stroke-width="0.7"/>
+          <circle cx="28" cy="84" r="3.5" fill="none" stroke="rgba(240,176,196,0.55)" stroke-width="0.7"/>
+          <circle cx="28" cy="96" r="3.5" fill="none" stroke="rgba(240,176,196,0.55)" stroke-width="0.7"/>
+        </g>
+        <!-- Right bloom -->
+        <g class="bloom" id="bl1" style="animation-delay:2s">
+          <circle cx="192" cy="90" r="5" fill="none" stroke="rgba(200,210,240,0.7)" stroke-width="0.8"/>
+          <circle cx="192" cy="90" r="2.5" fill="rgba(200,210,240,0.35)"/>
+          <circle cx="187" cy="87" r="3.5" fill="none" stroke="rgba(200,210,240,0.55)" stroke-width="0.7"/>
+          <circle cx="197" cy="87" r="3.5" fill="none" stroke="rgba(200,210,240,0.55)" stroke-width="0.7"/>
+          <circle cx="192" cy="84" r="3.5" fill="none" stroke="rgba(200,210,240,0.55)" stroke-width="0.7"/>
+          <circle cx="192" cy="96" r="3.5" fill="none" stroke="rgba(200,210,240,0.55)" stroke-width="0.7"/>
+        </g>
+        <!-- Top bloom -->
+        <g class="bloom" id="bl2" style="animation-delay:2.1s">
+          <circle cx="110" cy="14" r="6" fill="none" stroke="rgba(240,176,196,0.65)" stroke-width="0.9"/>
+          <circle cx="110" cy="14" r="3" fill="rgba(240,176,196,0.3)"/>
+          <circle cx="104" cy="10" r="4" fill="none" stroke="rgba(240,176,196,0.5)" stroke-width="0.7"/>
+          <circle cx="116" cy="10" r="4" fill="none" stroke="rgba(240,176,196,0.5)" stroke-width="0.7"/>
+          <circle cx="110" cy="7" r="4" fill="none" stroke="rgba(240,176,196,0.5)" stroke-width="0.7"/>
+          <circle cx="110" cy="21" r="4" fill="none" stroke="rgba(240,176,196,0.5)" stroke-width="0.7"/>
+          <circle cx="104" cy="18" r="3" fill="none" stroke="rgba(240,176,196,0.4)" stroke-width="0.6"/>
+          <circle cx="116" cy="18" r="3" fill="none" stroke="rgba(240,176,196,0.4)" stroke-width="0.6"/>
+        </g>
+        <!-- Small accent blooms along branches -->
+        <g class="bloom" id="bl3" style="animation-delay:1.9s">
+          <circle cx="50" cy="72" r="3.5" fill="none" stroke="rgba(200,210,240,0.6)" stroke-width="0.7"/>
+          <circle cx="50" cy="72" r="1.5" fill="rgba(200,210,240,0.3)"/>
+        </g>
+        <g class="bloom" id="bl4" style="animation-delay:2.05s">
+          <circle cx="170" cy="72" r="3.5" fill="none" stroke="rgba(200,210,240,0.6)" stroke-width="0.7"/>
+          <circle cx="170" cy="72" r="1.5" fill="rgba(200,210,240,0.3)"/>
+        </g>
+        <g class="bloom" id="bl5" style="animation-delay:1.95s">
+          <circle cx="44" cy="120" r="3" fill="none" stroke="rgba(240,176,196,0.5)" stroke-width="0.7"/>
+          <circle cx="44" cy="120" r="1.2" fill="rgba(240,176,196,0.25)"/>
+        </g>
+        <g class="bloom" id="bl6" style="animation-delay:2.1s">
+          <circle cx="176" cy="120" r="3" fill="none" stroke="rgba(240,176,196,0.5)" stroke-width="0.7"/>
+          <circle cx="176" cy="120" r="1.2" fill="rgba(240,176,196,0.25)"/>
+        </g>
+        <!-- Monogram in centre -->
+        <text class="loading-monogram" x="110" y="112">B &amp; Z</text>
+      </svg>
+      <p class="loading-text">Preparing your invitation</p>
     </div>
+
+    <!-- Montage content injected by JS -->
     <div class="montage-progress"><div id="slide-bar"></div></div>
     <span class="skip-link" onclick="skipToDetails()">Skip ›</span>
-    <div class="snav snav-prev" onclick="prevPhoto()">&#8592;</div>
-    <div class="snav snav-next" onclick="nextPhoto()">&#8594;</div>
-    <div class="slide-dots" id="slideDots"></div>
   </div>
 </div>
 
@@ -276,8 +430,12 @@
             <option value="other">Other — please note below</option>
           </select>
         </div>
-        <div><label class="flabel">Mailing address <span style="opacity:0.5;font-size:9px">(optional — for a keepsake)</span></label><input class="finput" type="text" id="address" placeholder="Block / Street, Unit, Postal Code"></div>
-        <div><label class="flabel">A message for the couple</label><textarea class="ftextarea" id="message" placeholder="Share your wishes or a favourite memory…"></textarea></div>
+        <div><label class="flabel">Mailing address <span style="opacity:0.5;font-size:9px">(optional — for a keepsake)</span></label>
+          <input class="finput" type="text" id="address" placeholder="Block / Street, Unit, Postal Code">
+        </div>
+        <div><label class="flabel">A message for the couple</label>
+          <textarea class="ftextarea" id="message" placeholder="Share your wishes or a favourite memory…"></textarea>
+        </div>
         <button class="sub-btn" id="submitBtn" onclick="submitRsvp()">Send with Love ♡</button>
         <div class="error-msg" id="errorMsg"></div>
       </div>
@@ -297,24 +455,27 @@
 
 <script>
 // ══════════════════════════════════════════════
-// CONFIGURATION — paste your Apps Script URL here after Step 6
+// CONFIGURATION
 // ══════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweaaM5HFWBl-fleTEFKIHX7IlMkI2Mdmvo-YrYDkeR0u0_EFks-8TsdP8xtdazyVR-YQ/exec';
-const PHOTO_COUNT     = 5;
-const SLIDE_DURATION  = 4000; // milliseconds per photo
+const APPS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbwvDUQznsxLRArlUuPZLzMeW9CHN0QJwICyajgsetlhrXN4zPzn5Glw9poxvbnwEYjtDA/exec';
+const PHOTO_COUNT      = 5;   // both desktop and mobile use 5 photos
+const SLIDE_DURATION   = 3000; // ms per slide (desktop auto-advance)
+const MOBILE_BREAKPOINT = 768; // px — below this = mobile mode
 
 // ══════════════════════════════════════════════
 // State
 // ══════════════════════════════════════════════
-let guestId      = null;
-let guestData    = null;
-let photoDataUris = [];
-let cur          = 0;
-let slideTimer   = null;
+let guestId       = null;
+let guestData     = null;
+let desktopUris   = [];  // landscape photos for desktop
+let mobileUris    = [];  // portrait photos for mobile
+let isMobile      = false;
+let cur           = 0;
+let slideTimer    = null;
 let progressTimer = null;
-let progElapsed  = 0;
-let montageReady = false;
-let att          = null;
+let progElapsed   = 0;
+let montageReady  = false;
+let att           = null;
 
 // ══════════════════════════════════════════════
 // Petals
@@ -336,12 +497,29 @@ let att          = null;
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   guestId = params.get('id');
+  isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
   showPage(guestId ? 'pg-envelope' : 'pg-locked');
 });
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// SVG wreath — trigger self-draw animation
+// ══════════════════════════════════════════════
+function animateWreath() {
+  const paths = document.querySelectorAll('.wreath-path');
+  paths.forEach((path, i) => {
+    const len = path.getTotalLength ? path.getTotalLength() : 80;
+    path.style.strokeDasharray = len;
+    path.style.strokeDashoffset = len;
+    path.style.setProperty('--len', len);
+    // Stagger each branch segment
+    path.style.animationDelay = (i * 0.1) + 's';
+    path.classList.add('draw');
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -357,61 +535,90 @@ function openEnvelope() {
   setTimeout(() => {
     const b = document.getElementById('env-body');
     b.style.transition = 'transform 0.5s ease';
-    b.style.transform  = 'translateY(-14px)';
+    b.style.transform = 'translateY(-14px)';
   }, 600);
   setTimeout(() => {
+    isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
     showPage('pg-montage');
+    // Start wreath animation immediately
+    animateWreath();
+    // Start loading photos in background
     loadPhotosAndStart();
   }, 1100);
 }
 
 // ══════════════════════════════════════════════
-// Photo loading — all photos served via Apps Script
-// as base64 data URIs. No photo URLs ever in this file.
+// Photo loading — desktop fetches landscape (l1–l5)
+//                 mobile fetches portrait   (p1–p5)
+// Both served via Apps Script as base64 data URIs.
+// No photo URLs are ever present in this file.
 // ══════════════════════════════════════════════
 async function loadPhotosAndStart() {
-  const ploBar = document.getElementById('plo-bar');
-  let loaded = 0;
+  const prefix = isMobile ? 'p' : 'l'; // 'p' = portrait, 'l' = landscape
 
   const promises = Array.from({ length: PHOTO_COUNT }, (_, i) =>
-    fetch(`${APPS_SCRIPT_URL}?action=getPhoto&id=${encodeURIComponent(guestId)}&n=${i + 1}`)
+    fetch(`${APPS_SCRIPT_URL}?action=getPhoto&id=${encodeURIComponent(guestId)}&set=${prefix}&n=${i + 1}`)
       .then(r => r.text())
-      .then(dataUri => {
-        loaded++;
-        ploBar.style.width = (loaded / PHOTO_COUNT * 100) + '%';
-        return dataUri;
-      })
+      .then(dataUri => dataUri || null)
       .catch(() => null)
   );
 
-  photoDataUris = await Promise.all(promises);
-  await new Promise(r => setTimeout(r, 350));
+  const uris = await Promise.all(promises);
 
-  buildSlides();
+  if (isMobile) { mobileUris = uris; }
+  else          { desktopUris = uris; }
+
+  // Brief pause so wreath animation has a moment to breathe
+  await new Promise(r => setTimeout(r, 400));
+
+  buildMontage(uris);
 
   const overlay = document.getElementById('photo-loading-overlay');
   overlay.classList.add('hidden');
   setTimeout(() => {
     overlay.style.display = 'none';
-    startProgress();
-  }, 650);
+    if (isMobile) {
+      // Mobile: no auto-advance — user scrolls
+    } else {
+      startProgress();
+    }
+  }, 700);
 }
 
-function buildSlides() {
+// ══════════════════════════════════════════════
+// Build montage — different DOM for each mode
+// ══════════════════════════════════════════════
+function buildMontage(uris) {
   const wrap = document.getElementById('montageWrap');
-  const dots = document.getElementById('slideDots');
 
-  photoDataUris.forEach((uri, i) => {
+  if (isMobile) {
+    buildMobileStrip(wrap, uris);
+  } else {
+    buildDesktopSlides(wrap, uris);
+  }
+
+  montageReady = true;
+}
+
+/* Desktop — stacked absolute slides, fade crossfade */
+function buildDesktopSlides(wrap, uris) {
+  const slideContainer = document.createElement('div');
+  slideContainer.className = 'desktop-montage';
+  slideContainer.style.cssText = 'position:absolute;inset:0;';
+
+  const dots = document.createElement('div');
+  dots.className = 'slide-dots';
+  dots.id = 'slideDots';
+
+  uris.forEach((uri, i) => {
     const slide = document.createElement('div');
     slide.className = 'photo-slide' + (i === 0 ? ' active' : '');
     slide.id = `ps${i}`;
-
     const bgStyle = (uri && uri.startsWith('data:'))
       ? `background-image:url('${uri}')`
-      : `background:linear-gradient(160deg,#1a0d14,#0e1320)`;
-
+      : 'background:linear-gradient(160deg,#1a0d14,#0e1320)';
     slide.innerHTML = `<div class="slide-bg" style="${bgStyle}"></div><div class="slide-vignette"></div>`;
-    wrap.insertBefore(slide, wrap.querySelector('.snav-prev'));
+    slideContainer.appendChild(slide);
 
     const dot = document.createElement('div');
     dot.className = 'sdot' + (i === 0 ? ' active' : '');
@@ -419,14 +626,56 @@ function buildSlides() {
     dots.appendChild(dot);
   });
 
-  montageReady = true;
+  // Nav arrows
+  const prev = document.createElement('div');
+  prev.className = 'snav snav-prev';
+  prev.innerHTML = '&#8592;';
+  prev.onclick = prevPhoto;
+
+  const next = document.createElement('div');
+  next.className = 'snav snav-next';
+  next.innerHTML = '&#8594;';
+  next.onclick = nextPhoto;
+
+  wrap.insertBefore(slideContainer, wrap.querySelector('.montage-progress'));
+  wrap.appendChild(prev);
+  wrap.appendChild(next);
+  wrap.appendChild(dots);
+}
+
+/* Mobile — vertical scroll strip, snap scroll */
+function buildMobileStrip(wrap, uris) {
+  const strip = document.createElement('div');
+  strip.className = 'mobile-montage';
+  strip.id = 'mobileStrip';
+
+  uris.forEach((uri, i) => {
+    const slide = document.createElement('div');
+    slide.className = 'mobile-slide';
+    const bgStyle = (uri && uri.startsWith('data:'))
+      ? `background-image:url('${uri}')`
+      : 'background:linear-gradient(160deg,#1a0d14,#0e1320)';
+    slide.innerHTML = `
+      <div class="slide-bg" style="${bgStyle}"></div>
+      <div class="slide-vignette"></div>
+      ${i < uris.length - 1
+        ? `<div class="mobile-scroll-hint"><span>Scroll</span><div class="scroll-arrow"></div></div>`
+        : `<div class="mobile-continue"><button class="mobile-continue-btn" onclick="skipToDetails()">Continue ›</button></div>`
+      }`;
+    strip.appendChild(slide);
+  });
+
+  wrap.insertBefore(strip, wrap.querySelector('.montage-progress'));
+
+  // Hide the progress bar on mobile — not needed for scroll
+  document.getElementById('slide-bar').parentElement.style.display = 'none';
 }
 
 // ══════════════════════════════════════════════
-// Montage navigation
+// Desktop navigation
 // ══════════════════════════════════════════════
 function goToPhoto(n) {
-  if (!montageReady) return;
+  if (!montageReady || isMobile) return;
   clearTimeout(slideTimer);
   clearInterval(progressTimer);
   progElapsed = 0;
@@ -472,7 +721,7 @@ function skipToDetails() {
 }
 
 // ══════════════════════════════════════════════
-// Transition to details — fetch guest name
+// Transition to details
 // ══════════════════════════════════════════════
 async function transitionToDetails() {
   if (!guestData) {
@@ -482,10 +731,7 @@ async function transitionToDetails() {
       if (data.success) {
         guestData = data.guest;
         document.getElementById('guestName').textContent = guestData.name || 'Guest';
-        if (guestData.rsvped) {
-          showAlreadyRsvped();
-          return;
-        }
+        if (guestData.rsvped) { showAlreadyRsvped(); return; }
       }
     } catch(e) { /* non-fatal */ }
   }
@@ -496,8 +742,7 @@ async function transitionToDetails() {
 function showAlreadyRsvped() {
   showPage('pg-rsvp');
   document.getElementById('rsvpFormArea').style.display = 'none';
-  const s = document.getElementById('success');
-  s.classList.add('vis');
+  document.getElementById('success').classList.add('vis');
   const attending = guestData.attending === 'yes';
   document.getElementById('sTitle').textContent = attending ? 'See you on the 6th!' : 'Thank you for letting us know';
   document.getElementById('sBody').textContent  = attending
@@ -551,8 +796,7 @@ async function submitRsvp() {
     const data = await resp.json();
     if (data.success) {
       document.getElementById('rsvpFormArea').style.display = 'none';
-      const s = document.getElementById('success');
-      s.classList.add('vis');
+      document.getElementById('success').classList.add('vis');
       if (!isYes) {
         document.getElementById('sTitle').textContent = 'Thank you for letting us know';
         document.getElementById('sBody').textContent  = 'We will miss you dearly and will be thinking of you on our special day. 💙';
