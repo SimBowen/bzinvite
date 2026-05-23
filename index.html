@@ -185,6 +185,55 @@
   .rsvp-cta-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--rose),var(--deep-rose));border:none;border-radius:2px;color:white;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.34em;text-transform:uppercase;cursor:pointer;font-weight:300;box-shadow:0 4px 20px rgba(196,114,138,0.3);transition:transform 0.2s,box-shadow 0.2s;}
   .rsvp-cta-btn:hover{transform:translateY(-2px);box-shadow:0 7px 28px rgba(196,114,138,0.42);}
 
+  /* ── MAP ── */
+  .map-section{margin-top:28px;opacity:0;}
+  .map-label{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);font-weight:300;margin-bottom:10px;}
+  .map-frame{width:100%;height:220px;border:1px solid rgba(201,169,110,0.2);border-radius:2px;overflow:hidden;}
+  .map-frame iframe{width:100%;height:100%;border:0;filter:saturate(0.7) brightness(1.05);}
+
+  /* ── FAQ DRAWER ── */
+  #faq-btn{position:fixed;bottom:24px;right:20px;z-index:100;
+    background:linear-gradient(135deg,var(--rose),var(--deep-rose));
+    color:white;border:none;border-radius:50px;padding:10px 20px;
+    font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.25em;
+    text-transform:uppercase;cursor:pointer;font-weight:300;
+    box-shadow:0 4px 20px rgba(196,114,138,0.4);
+    transition:transform 0.2s,box-shadow 0.2s;
+    display:none;}
+  #faq-btn.visible{display:block;}
+  #faq-btn:hover{transform:translateY(-2px);box-shadow:0 7px 28px rgba(196,114,138,0.5);}
+
+  #faq-drawer{
+    position:fixed;inset:0;z-index:200;
+    display:none;flex-direction:column;
+  }
+  #faq-drawer.open{display:flex;}
+  .faq-backdrop{position:absolute;inset:0;background:rgba(30,15,20,0.55);backdrop-filter:blur(4px);}
+  .faq-panel{
+    position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(160deg,#fffaf8,#fef8fc);
+    border-radius:16px 16px 0 0;
+    max-height:75vh;overflow-y:auto;
+    padding:0 0 40px;
+    transform:translateY(100%);
+    transition:transform 0.4s cubic-bezier(0.34,1.1,0.64,1);
+  }
+  #faq-drawer.open .faq-panel{transform:translateY(0);}
+  .faq-handle-row{display:flex;align-items:center;justify-content:space-between;padding:18px 24px 12px;}
+  .faq-handle{width:36px;height:3px;background:rgba(201,169,110,0.3);border-radius:2px;}
+  .faq-close{font-size:20px;color:var(--text-light);cursor:pointer;line-height:1;background:none;border:none;padding:4px;}
+  .faq-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--text-dark);padding:0 24px 16px;border-bottom:1px solid rgba(201,169,110,0.15);}
+  .faq-list{padding:8px 24px 0;}
+  .faq-item{border-bottom:1px solid rgba(201,169,110,0.1);}
+  .faq-q{width:100%;padding:16px 0 14px;background:none;border:none;text-align:left;font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text-dark);cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-weight:400;}
+  .faq-q:hover{color:var(--deep-rose);}
+  .faq-chevron{font-size:11px;color:var(--deep-rose);flex-shrink:0;transition:transform 0.25s;}
+  .faq-item.open .faq-chevron{transform:rotate(180deg);}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height 0.35s ease;}
+  .faq-item.open .faq-a{max-height:300px;}
+  .faq-a p{font-size:14px;color:var(--text-mid);line-height:1.75;padding:0 0 16px;font-weight:300;}
+  .faq-loading{padding:24px;text-align:center;font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text-light);}
+
   /* ── RSVP ── */
   #pg-rsvp{padding:0 0 60px;justify-content:flex-start;animation:fadeIn 0.7s ease both;}
   .rsvp-inner{width:100%;max-width:520px;margin:0 auto;padding:0 clamp(24px,6vw,56px);}
@@ -393,6 +442,38 @@
       <h3 class="s-title" id="sTitle">Thank you!</h3>
       <p class="s-body"  id="sBody">Your RSVP has been received. We cannot wait to celebrate with you!</p>
     </div>
+
+    <!-- Map -->
+    <div class="map-section" id="mapSection">
+      <p class="map-label">Getting here</p>
+      <div class="map-frame">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.8176520661!2d103.84539!3d1.28625!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31da1904b6b45b9d%3A0x4daf8f0b1c2e3a5!2sParadox%20Singapore%20Merchant%20Court!5e0!3m2!1sen!2ssg!4v1700000000000!5m2!1sen!2ssg"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Paradox Singapore Merchant Court">
+        </iframe>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FAQ floating button -->
+<button id="faq-btn" onclick="openFaq()">FAQ ✦</button>
+
+<!-- FAQ drawer -->
+<div id="faq-drawer">
+  <div class="faq-backdrop" onclick="closeFaq()"></div>
+  <div class="faq-panel">
+    <div class="faq-handle-row">
+      <div class="faq-handle"></div>
+      <button class="faq-close" onclick="closeFaq()">✕</button>
+    </div>
+    <h2 class="faq-title">Questions & Answers</h2>
+    <div class="faq-list" id="faqList">
+      <p class="faq-loading">Loading…</p>
+    </div>
   </div>
 </div>
 
@@ -400,8 +481,8 @@
 // ══════════════════════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════════════════════
-const APPS_SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbwvDUQznsxLRArlUuPZLzMeW9CHN0QJwICyajgsetlhrXN4zPzn5Glw9poxvbnwEYjtDA/exec';
-const PHOTO_COUNT      = 5;   // both desktop and mobile use 5 photos
+const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev'; // update after wrangler deploy
+const PHOTO_COUNT      = 10;   // both desktop and mobile use 5 photos
 const SLIDE_DURATION   = 3000; // ms per slide (desktop auto-advance)
 const MOBILE_BREAKPOINT = 768; // px — below this = mobile mode
 
@@ -447,6 +528,7 @@ window.addEventListener('DOMContentLoaded', () => {
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  if (id === 'pg-rsvp') revealMapAndFaq();
 }
 
 // ══════════════════════════════════════════════
@@ -577,30 +659,54 @@ function openEnvelope() {
 // No photo URLs are ever present in this file.
 // ══════════════════════════════════════════════
 async function loadPhotosAndStart() {
-  const prefix = isMobile ? 'p' : 'l'; // 'p' = portrait, 'l' = landscape
+  const bar     = document.getElementById('plo-bar');
+  let fakeProg  = 0;
 
-  let loaded = 0;
-  const promises = Array.from({ length: PHOTO_COUNT }, (_, i) =>
-    fetch(`${APPS_SCRIPT_URL}?action=getPhoto&id=${encodeURIComponent(guestId)}&set=${prefix}&n=${i + 1}`)
-      .then(r => r.text())
-      .then(dataUri => {
-        loaded++;
-        const bar = document.getElementById('plo-bar');
-        if (bar) bar.style.width = (loaded / PHOTO_COUNT * 100) + '%';
-        return dataUri || null;
-      })
-      .catch(() => { loaded++; return null; })
-  );
+  // Animate bar while waiting for Worker response
+  const fakeTick = setInterval(() => {
+    fakeProg = Math.min(fakeProg + 0.5, PHOTO_COUNT * 0.78);
+    if (bar) bar.style.width = (fakeProg / PHOTO_COUNT * 100) + '%';
+  }, 160);
 
-  const uris = await Promise.all(promises);
+  let photoUrls = { landscape: [], portrait: [] };
 
-  if (isMobile) { mobileUris = uris; }
-  else          { desktopUris = uris; }
+  try {
+    const resp = await fetch(`${WORKER_URL}/api/auth`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id: guestId }),
+    });
+    const data = await resp.json();
+    clearInterval(fakeTick);
 
-  // Brief pause so wreath animation has a moment to breathe
-  await new Promise(r => setTimeout(r, 400));
+    if (!data.valid) {
+      stopWreathLoop();
+      showPage('pg-locked');
+      return;
+    }
 
-  buildMontage(uris);
+    guestData = data.guest;
+    document.getElementById('guestName').textContent = guestData.name || 'Guest';
+
+    if (guestData.rsvped) {
+      stopWreathLoop();
+      showAlreadyRsvped();
+      return;
+    }
+
+    photoUrls = data.photos || { landscape: [], portrait: [] };
+
+  } catch (e) {
+    clearInterval(fakeTick);
+    console.warn('Auth call failed:', e);
+  }
+
+  // Snap bar to 100% then pause briefly
+  if (bar) bar.style.width = '100%';
+  await new Promise(r => setTimeout(r, 350));
+
+  const uris = isMobile ? photoUrls.portrait : photoUrls.landscape;
+  buildMontageFromUrls(uris);
 
   const overlay = document.getElementById('photo-loading-overlay');
   stopWreathLoop();
@@ -617,8 +723,9 @@ async function loadPhotosAndStart() {
 
 // ══════════════════════════════════════════════
 // Build montage — different DOM for each mode
+// uris: array of signed R2 URLs (direct image URLs, not base64)
 // ══════════════════════════════════════════════
-function buildMontage(uris) {
+function buildMontageFromUrls(uris) {
   const wrap = document.getElementById('montageWrap');
 
   if (isMobile) {
@@ -644,7 +751,7 @@ function buildDesktopSlides(wrap, uris) {
     const slide = document.createElement('div');
     slide.className = 'photo-slide' + (i === 0 ? ' active' : '');
     slide.id = `ps${i}`;
-    const bgStyle = (uri && uri.startsWith('data:'))
+    const bgStyle = uri
       ? `background-image:url('${uri}')`
       : 'background:linear-gradient(160deg,#1a0d14,#0e1320)';
     slide.innerHTML = `<div class="slide-bg" style="${bgStyle}"></div><div class="slide-vignette"></div>`;
@@ -683,7 +790,7 @@ function buildMobileStrip(wrap, uris) {
     const slide = document.createElement('div');
     slide.className = 'mobile-slide';
     slide.id = `ms${i}`;
-    const bgStyle = (uri && uri.startsWith('data:'))
+    const bgStyle = uri
       ? `background-image:url('${uri}')`
       : 'background:linear-gradient(160deg,#1a0d14,#0e1320)';
     slide.innerHTML = `
@@ -787,17 +894,8 @@ function skipToDetails() {
 // Transition to details
 // ══════════════════════════════════════════════
 async function transitionToDetails() {
-  if (!guestData) {
-    try {
-      const resp = await fetch(`${APPS_SCRIPT_URL}?action=getGuest&id=${encodeURIComponent(guestId)}`);
-      const data = await resp.json();
-      if (data.success) {
-        guestData = data.guest;
-        document.getElementById('guestName').textContent = guestData.name || 'Guest';
-        if (guestData.rsvped) { showAlreadyRsvped(); return; }
-      }
-    } catch(e) { /* non-fatal */ }
-  }
+  // guestData already populated by /api/auth during photo loading
+  if (guestData && guestData.rsvped) { showAlreadyRsvped(); return; }
   showPage('pg-details');
   animateDetails();
 }
@@ -855,7 +953,11 @@ async function submitRsvp() {
   };
 
   try {
-    const resp = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+    const resp = await fetch(`${WORKER_URL}/api/rsvp`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
     const data = await resp.json();
     if (data.success) {
       document.getElementById('rsvpFormArea').style.display = 'none';
@@ -877,6 +979,85 @@ async function submitRsvp() {
     btn.textContent = isYes ? 'Send with Love ♡' : 'Confirm Decline';
   }
 }
+
+// ══════════════════════════════════════════════
+// Map & FAQ — show after RSVP page loads
+// ══════════════════════════════════════════════
+function revealMapAndFaq() {
+  // Animate map in
+  const mapSection = document.getElementById('mapSection');
+  if (mapSection) {
+    setTimeout(() => {
+      mapSection.style.animation = 'appear 0.6s ease forwards';
+    }, 400);
+  }
+  // Show FAQ button
+  const faqBtn = document.getElementById('faq-btn');
+  if (faqBtn) faqBtn.classList.add('visible');
+}
+
+// ── FAQ drawer ─────────────────────────────────
+let faqLoaded = false;
+
+async function openFaq() {
+  document.getElementById('faq-drawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if (!faqLoaded) {
+    await loadFaq();
+    faqLoaded = true;
+  }
+}
+
+function closeFaq() {
+  document.getElementById('faq-drawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function loadFaq() {
+  const list = document.getElementById('faqList');
+  list.innerHTML = '<p class="faq-loading">Loading…</p>';
+
+  try {
+    const resp = await fetch(`${WORKER_URL}/api/faq`);
+    const data = await resp.json();
+
+    if (!data.success || !data.faqs?.length) {
+      list.innerHTML = '<p class="faq-loading">No FAQs available yet.</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    data.faqs.forEach((faq, i) => {
+      const item = document.createElement('div');
+      item.className = 'faq-item';
+      item.innerHTML = `
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>${faq.question}</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-a"><p>${faq.answer}</p></div>`;
+      list.appendChild(item);
+    });
+
+  } catch (e) {
+    list.innerHTML = '<p class="faq-loading">Could not load FAQs. Please check back later.</p>';
+  }
+}
+
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const wasOpen = item.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+  // Open this one if it was closed
+  if (!wasOpen) item.classList.add('open');
+}
+
+// Close FAQ drawer on escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeFaq();
+});
 </script>
 </body>
 </html>
