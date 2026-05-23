@@ -669,7 +669,6 @@ async function loadPhotosAndStart() {
   }, 160);
 
   let photoUrls = { landscape: [], portrait: [] };
-  let authFailed = false;
 
   try {
     const resp = await fetch(`${WORKER_URL}/api/auth`, {
@@ -678,46 +677,29 @@ async function loadPhotosAndStart() {
       body:    JSON.stringify({ id: guestId }),
     });
 
-    // Log raw response for debugging
-    const rawText = await resp.text();
-    console.log('[auth] status:', resp.status, 'body:', rawText);
-
-    let data;
-    try { data = JSON.parse(rawText); }
-    catch (parseErr) {
-      console.error('[auth] JSON parse failed:', parseErr, 'raw:', rawText);
-      authFailed = true;
-    }
-
+    const data = await resp.json();
     clearInterval(fakeTick);
 
-    if (!authFailed && data) {
-      if (!data.valid) {
-        // Only go to locked if we got a deliberate invalid response
-        // (not a network/CORS error)
-        console.warn('[auth] invalid token response:', data.error);
-        stopWreathLoop();
-        showPage('pg-locked');
-        return;
-      }
-
-      guestData = data.guest;
-      document.getElementById('guestName').textContent = guestData.name || 'Guest';
-
-      if (guestData.rsvped) {
-        stopWreathLoop();
-        showAlreadyRsvped();
-        return;
-      }
-
-      photoUrls = data.photos || { landscape: [], portrait: [] };
+    if (!data.valid) {
+      stopWreathLoop();
+      showPage('pg-locked');
+      return;
     }
+
+    guestData = data.guest;
+    document.getElementById('guestName').textContent = guestData.name || 'Guest';
+
+    if (guestData.rsvped) {
+      stopWreathLoop();
+      showAlreadyRsvped();
+      return;
+    }
+
+    photoUrls = data.photos || { landscape: [], portrait: [] };
 
   } catch (e) {
     clearInterval(fakeTick);
-    console.error('[auth] fetch threw (likely CORS or network):', e.message, e);
-    // Do NOT redirect to locked on network error — continue with empty photos
-    // so guest sees the invite even if photos fail
+    // Non-fatal — continue with empty photo slots
   }
 
   // Snap bar to 100% then pause briefly
