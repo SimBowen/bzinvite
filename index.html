@@ -481,7 +481,7 @@
 // ══════════════════════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════════════════════
-const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev'; // update after wrangler deploy
+const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev';
 const PHOTO_COUNT      = 5;   // both desktop and mobile use 5 photos
 const SLIDE_DURATION   = 3000; // ms per slide (desktop auto-advance)
 const MOBILE_BREAKPOINT = 768; // px — below this = mobile mode
@@ -669,6 +669,7 @@ async function loadPhotosAndStart() {
   }, 160);
 
   let photoUrls = { landscape: [], portrait: [] };
+  let authFailed = false;
 
   try {
     const resp = await fetch(`${WORKER_URL}/api/auth`, {
@@ -676,29 +677,47 @@ async function loadPhotosAndStart() {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ id: guestId }),
     });
-    const data = await resp.json();
+
+    // Log raw response for debugging
+    const rawText = await resp.text();
+    console.log('[auth] status:', resp.status, 'body:', rawText);
+
+    let data;
+    try { data = JSON.parse(rawText); }
+    catch (parseErr) {
+      console.error('[auth] JSON parse failed:', parseErr, 'raw:', rawText);
+      authFailed = true;
+    }
+
     clearInterval(fakeTick);
 
-    if (!data.valid) {
-      stopWreathLoop();
-      showPage('pg-locked');
-      return;
+    if (!authFailed && data) {
+      if (!data.valid) {
+        // Only go to locked if we got a deliberate invalid response
+        // (not a network/CORS error)
+        console.warn('[auth] invalid token response:', data.error);
+        stopWreathLoop();
+        showPage('pg-locked');
+        return;
+      }
+
+      guestData = data.guest;
+      document.getElementById('guestName').textContent = guestData.name || 'Guest';
+
+      if (guestData.rsvped) {
+        stopWreathLoop();
+        showAlreadyRsvped();
+        return;
+      }
+
+      photoUrls = data.photos || { landscape: [], portrait: [] };
     }
-
-    guestData = data.guest;
-    document.getElementById('guestName').textContent = guestData.name || 'Guest';
-
-    if (guestData.rsvped) {
-      stopWreathLoop();
-      showAlreadyRsvped();
-      return;
-    }
-
-    photoUrls = data.photos || { landscape: [], portrait: [] };
 
   } catch (e) {
     clearInterval(fakeTick);
-    console.warn('Auth call failed:', e);
+    console.error('[auth] fetch threw (likely CORS or network):', e.message, e);
+    // Do NOT redirect to locked on network error — continue with empty photos
+    // so guest sees the invite even if photos fail
   }
 
   // Snap bar to 100% then pause briefly
