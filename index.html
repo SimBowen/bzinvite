@@ -246,7 +246,21 @@
   .att-btn.sel-yes{border-color:var(--deep-rose);background:rgba(247,214,224,0.4);color:var(--deep-rose);}
   .att-btn.sel-no{border-color:var(--deep-blue);background:rgba(208,232,245,0.4);color:var(--deep-blue);}
   .rsvp-fields{display:flex;flex-direction:column;gap:16px;overflow:hidden;max-height:0;transition:max-height 0.6s ease;}
-  .rsvp-fields.open{max-height:700px;}
+  .rsvp-fields.open{max-height:4000px;}
+  /* pax selector */
+  .pax-row{display:flex;align-items:center;gap:12px;}
+  .pax-counter{display:flex;align-items:center;gap:0;border:1px solid rgba(201,169,110,0.28);border-radius:2px;overflow:hidden;}
+  .pax-btn{width:40px;height:44px;background:transparent;border:none;font-size:18px;color:var(--deep-rose);cursor:pointer;transition:background 0.2s;font-family:'Jost',sans-serif;}
+  .pax-btn:hover{background:rgba(247,214,224,0.3);}
+  .pax-num{width:44px;height:44px;background:rgba(253,246,240,0.7);border:none;border-left:1px solid rgba(201,169,110,0.2);border-right:1px solid rgba(201,169,110,0.2);text-align:center;font-family:'Jost',sans-serif;font-size:16px;color:var(--text-dark);font-weight:300;line-height:44px;}
+  .pax-max{font-size:11px;color:var(--text-light);letter-spacing:0.1em;}
+  /* guest entry rows */
+  .guest-rows{display:flex;flex-direction:column;gap:18px;margin-top:4px;}
+  .guest-row{background:rgba(247,214,224,0.08);border:1px solid rgba(201,169,110,0.15);border-radius:2px;padding:16px;}
+  .guest-row-label{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);font-weight:300;margin-bottom:12px;}
+  .name-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .dietary-other-wrap{display:none;margin-top:8px;}
+  .dietary-other-wrap.vis{display:block;}
   .flabel{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);display:block;margin-bottom:6px;font-weight:300;}
   .finput,.fselect,.ftextarea{width:100%;padding:13px 15px;background:rgba(253,246,240,0.7);border:1px solid rgba(201,169,110,0.22);border-radius:2px;font-family:'Jost',sans-serif;font-size:14px;color:var(--text-dark);outline:none;transition:border-color 0.25s;font-weight:300;}
   .finput:focus,.fselect:focus,.ftextarea:focus{border-color:var(--rose);}
@@ -410,24 +424,34 @@
         <button class="att-btn" id="btnNo"  onclick="selectAtt('no')">✕ &nbsp;Regretfully Declines</button>
       </div>
       <div class="rsvp-fields" id="rsvpFields">
-        <div><label class="flabel">Number of guests attending</label><input class="finput" type="number" id="guestCount" min="1" max="5" value="1"></div>
-        <div><label class="flabel">Dietary restrictions</label>
-          <select class="fselect" id="dietary">
-            <option value="none">None</option>
-            <option value="vegetarian">Vegetarian</option>
-            <option value="vegan">Vegan</option>
-            <option value="halal">Halal</option>
-            <option value="gluten-free">Gluten-Free</option>
-            <option value="shellfish">No Shellfish</option>
-            <option value="other">Other — please note below</option>
-          </select>
+
+        <!-- Number of guests (capped by pax from Sheet) -->
+        <div>
+          <label class="flabel">Number of guests attending</label>
+          <div class="pax-row">
+            <div class="pax-counter">
+              <button class="pax-btn" type="button" onclick="adjustPax(-1)">−</button>
+              <div class="pax-num" id="paxDisplay">1</div>
+              <button class="pax-btn" type="button" onclick="adjustPax(1)">+</button>
+            </div>
+            <span class="pax-max" id="paxMax"></span>
+          </div>
         </div>
-        <div><label class="flabel">Mailing address <span style="opacity:0.5;font-size:9px">(optional — for a keepsake)</span></label>
+
+        <!-- Dynamic guest name + dietary rows (rendered by JS) -->
+        <div class="guest-rows" id="guestRows"></div>
+
+        <!-- Group-level fields — one per submission -->
+        <div>
+          <label class="flabel">Mailing address <span style="opacity:0.5;font-size:9px">(optional — for a keepsake)</span></label>
           <input class="finput" type="text" id="address" placeholder="Block / Street, Unit, Postal Code">
         </div>
-        <div><label class="flabel">A message for the couple</label>
+
+        <div>
+          <label class="flabel">A message for the couple <span style="opacity:0.5;font-size:9px">(optional)</span></label>
           <textarea class="ftextarea" id="message" placeholder="Share your wishes or a favourite memory…"></textarea>
         </div>
+
         <button class="sub-btn" id="submitBtn" onclick="submitRsvp()">Send with Love ♡</button>
         <div class="error-msg" id="errorMsg"></div>
       </div>
@@ -500,6 +524,8 @@ let progressTimer = null;
 let progElapsed   = 0;
 let montageReady  = false;
 let att           = null;
+let paxAllowed    = 1;
+let paxSelected   = 1;
 
 // ══════════════════════════════════════════════
 // Petals
@@ -687,6 +713,7 @@ async function loadPhotosAndStart() {
     }
 
     guestData = data.guest;
+    paxAllowed = parseInt(guestData.pax) || 1;
     document.getElementById('guestName').textContent = guestData.name || 'Guest';
 
     if (guestData.rsvped) {
@@ -931,6 +958,75 @@ function selectAtt(v) {
   document.getElementById('btnNo').className  = 'att-btn' + (v === 'no'  ? ' sel-no'  : '');
   document.getElementById('rsvpFields').classList.toggle('open', v === 'yes');
   document.getElementById('declineNote').classList.toggle('vis', v === 'no');
+  if (v === 'yes') {
+    // Initialise pax controls once fields open
+    paxSelected = 1;
+    document.getElementById('paxDisplay').textContent = 1;
+    document.getElementById('paxMax').textContent = paxAllowed > 1
+      ? `Up to ${paxAllowed} guests` : '';
+    renderGuestRows(1);
+  }
+}
+
+// ── Pax +/- counter ────────────────────────────────────────────
+function adjustPax(delta) {
+  const next = paxSelected + delta;
+  if (next < 1 || next > paxAllowed) return;
+  paxSelected = next;
+  document.getElementById('paxDisplay').textContent = next;
+  renderGuestRows(next);
+}
+
+// ── Render guest name + dietary rows ──────────────────────────
+function renderGuestRows(count) {
+  const container = document.getElementById('guestRows');
+  // Preserve existing values before re-rendering
+  const existing = [];
+  container.querySelectorAll('.guest-row').forEach(row => {
+    existing.push({
+      firstName:     row.querySelector('.g-first')?.value  || '',
+      lastName:      row.querySelector('.g-last')?.value   || '',
+      dietary:       row.querySelector('.g-dietary')?.value || 'none',
+      dietaryOther:  row.querySelector('.g-dietary-other')?.value || '',
+    });
+  });
+
+  container.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const prev = existing[i] || {};
+    const isFirst = i === 0;
+    const label   = isFirst ? 'Guest 1 (You)' : `Guest ${i + 1}`;
+    const div = document.createElement('div');
+    div.className = 'guest-row';
+    div.innerHTML = `
+      <p class="guest-row-label">${label}</p>
+      <div class="name-pair">
+        <div>
+          <label class="flabel">First Name</label>
+          <input class="finput g-first" type="text" placeholder="First name" value="${prev.firstName}">
+        </div>
+        <div>
+          <label class="flabel">Last Name</label>
+          <input class="finput g-last" type="text" placeholder="Last name" value="${prev.lastName}">
+        </div>
+      </div>
+      <label class="flabel">Dietary Requirements</label>
+      <select class="fselect g-dietary" onchange="toggleDietaryOther(this)">
+        <option value="none"        ${prev.dietary==='none'        ?'selected':''}>None</option>
+        <option value="halal"       ${prev.dietary==='halal'       ?'selected':''}>Halal</option>
+        <option value="vegetarian"  ${prev.dietary==='vegetarian'  ?'selected':''}>Vegetarian</option>
+        <option value="other"       ${prev.dietary==='other'       ?'selected':''}>Other</option>
+      </select>
+      <div class="dietary-other-wrap ${prev.dietary==='other'?'vis':''}">
+        <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${prev.dietaryOther}">
+      </div>`;
+    container.appendChild(div);
+  }
+}
+
+function toggleDietaryOther(select) {
+  const wrap = select.nextElementSibling;
+  wrap.classList.toggle('vis', select.value === 'other');
 }
 
 async function submitRsvp() {
@@ -943,14 +1039,36 @@ async function submitRsvp() {
   btn.textContent = 'Sending…';
   errorEl.classList.remove('vis');
 
+  // Collect per-guest data from dynamic rows
+  let guests = [];
+  if (isYes) {
+    const rows = document.querySelectorAll('#guestRows .guest-row');
+    let valid = true;
+    rows.forEach((row, i) => {
+      const firstName = row.querySelector('.g-first').value.trim();
+      const lastName  = row.querySelector('.g-last').value.trim();
+      if (!firstName || !lastName) valid = false;
+      const dietary      = row.querySelector('.g-dietary').value;
+      const dietaryOther = dietary === 'other'
+        ? row.querySelector('.g-dietary-other').value.trim() : '';
+      guests.push({ firstName, lastName, dietary, dietaryOther });
+    });
+    if (!valid) {
+      errorEl.textContent = 'Please fill in the first and last name for all guests.';
+      errorEl.classList.add('vis');
+      btn.disabled = false;
+      btn.textContent = 'Send with Love ♡';
+      return;
+    }
+  }
+
   const payload = {
-    action:     'submitRsvp',
-    id:          guestId,
-    attending:   att,
-    guestCount:  isYes ? (parseInt(document.getElementById('guestCount').value) || 1) : 0,
-    dietary:     isYes ? document.getElementById('dietary').value : '',
-    address:     isYes ? document.getElementById('address').value.trim() : '',
-    message:     isYes ? document.getElementById('message').value.trim() : '',
+    action:    'submitRsvp',
+    id:         guestId,
+    attending:  att,
+    guests:     guests,
+    address:    isYes ? document.getElementById('address').value.trim() : '',
+    message:    isYes ? document.getElementById('message').value.trim() : '',
   };
 
   try {
