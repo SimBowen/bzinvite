@@ -312,8 +312,8 @@
   .attend-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
   .att-btn{padding:14px;border:1.5px solid rgba(201,169,110,0.28);background:transparent;border-radius:2px;cursor:pointer;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--text-mid);text-transform:uppercase;font-weight:300;transition:all 0.25s;}
   .att-btn:hover{border-color:var(--rose);background:rgba(247,214,224,0.2);color:var(--deep-rose);}
-  .att-btn.sel-yes{border-color:var(--deep-rose);background:rgba(247,214,224,0.4);color:var(--deep-rose);}
-  .att-btn.sel-no{border-color:var(--deep-blue);background:rgba(208,232,245,0.4);color:var(--deep-blue);}
+  .att-btn.sel-yes{border-color:var(--deep-blue);background:rgba(208,232,245,0.4);color:var(--deep-blue);}
+  .att-btn.sel-no{border-color:var(--deep-rose);background:rgba(247,214,224,0.4);color:var(--deep-rose);}
   .rsvp-fields{display:flex;flex-direction:column;gap:16px;overflow:hidden;max-height:0;transition:max-height 0.6s ease;}
   .rsvp-fields.open{max-height:4000px;}
   /* pax selector */
@@ -1151,6 +1151,7 @@ function renderGuestRows(count) {
         <option value="none"        ${prev.dietary==='none'        ?'selected':''}>None</option>
         <option value="halal"       ${prev.dietary==='halal'       ?'selected':''}>Halal</option>
         <option value="vegetarian"  ${prev.dietary==='vegetarian'  ?'selected':''}>Vegetarian</option>
+        <option value="kids"        ${prev.dietary==='kids'        ?'selected':''}>Kid's Meal</option>
         <option value="other"       ${prev.dietary==='other'       ?'selected':''}>Other</option>
       </select>
       <div class="dietary-other-wrap ${prev.dietary==='other'?'vis':''}">
@@ -1328,15 +1329,14 @@ function buildTimeline() {
   // SVG icon paths
   const icons = {
     rings: `<svg viewBox="0 0 24 24"><circle cx="8.5" cy="12" r="4.5"/><circle cx="15.5" cy="12" r="4.5"/></svg>`,
-    cocktail: `<svg viewBox="0 0 24 24">
-      <path d="M4 4 L12 14 L20 4 Z"/>
-      <line x1="12" y1="14" x2="12" y2="19.5"/>
-      <line x1="8.5" y1="19.5" x2="15.5" y2="19.5"/>
-      <line x1="14.5" y1="7" x2="17.5" y2="4.5"/>
-      <circle cx="17.8" cy="4.2" r="1.1" fill="var(--deep-rose)" stroke="none"/>
-      <circle cx="9.5"  cy="9"   r="0.5" fill="var(--deep-rose)" stroke="none"/>
-      <circle cx="12"   cy="7.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
-      <circle cx="14"   cy="9.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
+    cocktail: `<svg viewBox="0 0 100 100">
+      <path d="M26 44 C31 37 69 37 74 44" fill="rgba(196,114,138,0.12)" stroke="var(--deep-rose)" stroke-width="1.2" stroke-linecap="round"/>
+      <circle cx="50" cy="34" r="3" fill="var(--deep-rose)"/>
+      <path d="M16 48 Q50 44 84 48" fill="rgba(196,114,138,0.06)" stroke="var(--deep-rose)" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M16 48 C19 54, 28 57, 32 62 C36 67, 38 71, 42 75 L58 75 C62 71, 64 67, 68 62 C72 57, 81 54, 84 48" fill="rgba(196,114,138,0.1)" stroke="var(--deep-rose)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <ellipse cx="50" cy="75" rx="13" ry="2.2" fill="none" stroke="var(--deep-rose)" stroke-width="1"/>
+      <path d="M24 79 Q50 86 76 79" fill="rgba(196,114,138,0.08)" stroke="var(--deep-rose)" stroke-width="1.1" stroke-linecap="round"/>
+      <path d="M19 78 Q50 88 81 78" fill="rgba(196,114,138,0.05)" stroke="var(--deep-rose)" stroke-width="1.1" stroke-linecap="round"/>
     </svg>`,
     plate: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 8v3a1 1 0 0 0 2 0V8M10 11v5M14 8v8M14 8a2 2 0 0 1 2 2v1h-2"/></svg>`,
   };
@@ -1362,14 +1362,14 @@ function buildTimeline() {
         <div class="tl-line"></div>
         ${makeItem(icons.rings,    '10:45 am', '婚礼仪式', 'Solemnisation', 'please be seated')}
         ${makeItem(icons.cocktail, '11:45 am', '迎宾接待', 'Pre-Reception',  '')}
-        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴', 'Lunch Banquet',  'ballroom opens')}
+        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴', 'Lunch Banquet',  'please be seated')}
       </div>`;
   } else {
     html = `
       <div class="tl-row">
         <div class="tl-line-short"></div>
         ${makeItem(icons.cocktail, '11:45 am', '迎宾接待', 'Pre-Reception', '')}
-        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴', 'Lunch Banquet', 'ballroom opens')}
+        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴', 'Lunch Banquet', 'please be seated')}
       </div>`;
   }
 
