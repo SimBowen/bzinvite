@@ -185,6 +185,22 @@
   .rsvp-cta-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--rose),var(--deep-rose));border:none;border-radius:2px;color:white;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.34em;text-transform:uppercase;cursor:pointer;font-weight:300;box-shadow:0 4px 20px rgba(196,114,138,0.3);transition:transform 0.2s,box-shadow 0.2s;}
   .rsvp-cta-btn:hover{transform:translateY(-2px);box-shadow:0 7px 28px rgba(196,114,138,0.42);}
 
+  /* ── TIMELINE ── */
+  .tl-section{margin-top:32px;opacity:0;}
+  .tl-tier-label{text-align:center;font-family:'Jost',sans-serif;font-size:9px;letter-spacing:0.28em;text-transform:uppercase;color:var(--text-light);margin-bottom:14px;}
+  .tl-row{display:flex;align-items:flex-start;justify-content:center;position:relative;padding:0 20px;}
+  .tl-line{position:absolute;top:40px;left:60px;right:60px;height:1px;background:rgba(196,114,138,0.22);}
+  .tl-line-short{position:absolute;top:40px;left:120px;right:120px;height:1px;background:rgba(196,114,138,0.22);}
+  .tl-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;z-index:1;}
+  .tl-icon-wrap{width:72px;height:72px;border-radius:50%;background:rgba(253,245,248,0.9);border:1px solid rgba(196,114,138,0.18);display:flex;align-items:center;justify-content:center;}
+  .tl-icon-wrap svg{width:38px;height:38px;stroke:var(--deep-rose);fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;}
+  .tl-dot{width:6px;height:6px;border-radius:50%;background:var(--deep-rose);opacity:0.4;margin-top:-2px;}
+  .tl-time{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--deep-rose);letter-spacing:0.04em;line-height:1;}
+  .tl-zh{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--text-dark);letter-spacing:0.06em;line-height:1;}
+  .tl-en{font-family:'Jost',sans-serif;font-size:10px;color:var(--text-light);letter-spacing:0.14em;text-transform:uppercase;font-weight:300;line-height:1;}
+  .tl-note{font-family:'Jost',sans-serif;font-size:9px;color:var(--deep-rose);letter-spacing:0.1em;font-style:italic;line-height:1;opacity:0.75;}
+  .tl-labels{display:flex;flex-direction:column;align-items:center;gap:5px;}
+
   /* ── MAP ── */
   .map-section{margin-top:28px;opacity:0;}
   .map-label{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);font-weight:300;margin-bottom:10px;}
@@ -457,6 +473,9 @@
         <div class="detail-row"><span class="dlabel">Dress</span><span class="dvalue">Smart casual · Avoid white &amp; black</span></div>
       </div>
     </div>
+    <!-- Timeline — injected by JS based on event_tier -->
+    <div class="tl-section" id="d7b" style="opacity:0"></div>
+
     <div class="rsvp-cta" id="d7">
       <button class="rsvp-cta-btn" onclick="showPage('pg-rsvp')">Kindly Reply ♡</button>
     </div>
@@ -1042,13 +1061,15 @@ function showAlreadyRsvped() {
 }
 
 function animateDetails() {
-  [['d1',200],['d2',380],['d3',540],['d4',680],['d5',820],['d6',980],['d7',1200]]
+  [['d1',200],['d2',380],['d3',540],['d4',680],['d5',820],['d6',980],['d7b',1150],['d7',1300]]
     .forEach(([id, delay]) => {
       setTimeout(() => {
         const el = document.getElementById(id);
         if (el) el.style.animation = 'appear 0.65s ease forwards';
       }, delay);
     });
+  // Build timeline after guest data is available
+  setTimeout(buildTimeline, 1100);
 }
 
 // ══════════════════════════════════════════════
@@ -1286,6 +1307,66 @@ async function submitRsvp() {
 }
 
 // ══════════════════════════════════════════════
+// TIMELINE — builds inline on the invite details page
+// ══════════════════════════════════════════════
+function buildTimeline() {
+  const container = document.getElementById('d7b');
+  if (!container) return;
+
+  const isFull = eventTier === 'full';
+
+  // SVG icon paths
+  const icons = {
+    rings: `<svg viewBox="0 0 24 24"><circle cx="8.5" cy="12" r="4.5"/><circle cx="15.5" cy="12" r="4.5"/></svg>`,
+    cocktail: `<svg viewBox="0 0 24 24">
+      <path d="M4 4 L12 14 L20 4 Z"/>
+      <line x1="12" y1="14" x2="12" y2="19.5"/>
+      <line x1="8.5" y1="19.5" x2="15.5" y2="19.5"/>
+      <line x1="14.5" y1="7" x2="17.5" y2="4.5"/>
+      <circle cx="17.8" cy="4.2" r="1.1" fill="var(--deep-rose)" stroke="none"/>
+      <circle cx="9.5"  cy="9"   r="0.5" fill="var(--deep-rose)" stroke="none"/>
+      <circle cx="12"   cy="7.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
+      <circle cx="14"   cy="9.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
+    </svg>`,
+    plate: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 8v3a1 1 0 0 0 2 0V8M10 11v5M14 8v8M14 8a2 2 0 0 1 2 2v1h-2"/></svg>`,
+  };
+
+  function makeItem(icon, time, zh, en, note) {
+    return `<div class="tl-item">
+      <div class="tl-icon-wrap">${icon}</div>
+      <div class="tl-dot"></div>
+      <div class="tl-labels">
+        <span class="tl-time">${time}</span>
+        <span class="tl-zh">${zh}</span>
+        <span class="tl-en">${en}</span>
+        ${note ? `<span class="tl-note">${note}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  let html = '';
+
+  if (isFull) {
+    html = `
+      <div class="tl-row">
+        <div class="tl-line"></div>
+        ${makeItem(icons.rings,    '10:45 am', '婚礼仪式', 'Solemnisation', 'please be seated')}
+        ${makeItem(icons.cocktail, '11:45 am', '迎宾接待', 'Pre-Reception',  '')}
+        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴', 'Lunch Banquet',  'ballroom opens')}
+      </div>`;
+  } else {
+    html = `
+      <div class="tl-row">
+        <div class="tl-line-short"></div>
+        ${makeItem(icons.cocktail, '11:45 am', '迎宾接待', 'Pre-Reception', '')}
+        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴', 'Lunch Banquet', 'ballroom opens')}
+      </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
 // Map & FAQ — show after RSVP page loads
 // ══════════════════════════════════════════════
 function revealMapAndFaq() {
@@ -1372,78 +1453,87 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════════════
 // SCHEDULE DRAWER
 // ══════════════════════════════════════════════
-const VENUE = 'Paradox Singapore Merchant Court';
-const EVENT_DATE = '20261206'; // YYYYMMDD
+const VENUE = 'Paradox Singapore Merchant Court, 20 Merchant Road, Singapore 058282';
 
-// All segments — full tier sees both blocks, dinner tier sees dinner only
-const SCHEDULE = {
-  full: [
-    {
-      groupLabel: 'Solemnisation & Tea Ceremony',
-      segments: [
-        { time: '10:45 am', label: 'Guests Seated',           location: VENUE, start: '20261206T024500Z', end: '20261206T030000Z' },
-        { time: '11:00 am', label: 'Solemnisation Ceremony',  location: VENUE, start: '20261206T030000Z', end: '20261206T034500Z' },
-        { time: '11:45 am', label: 'Tea Ceremony',            location: VENUE, start: '20261206T034500Z', end: '20261206T041500Z' },
-        { time: '12:15 pm', label: 'Solemnisation Concludes', location: VENUE, start: null, end: null },
-      ]
-    },
-    {
-      groupLabel: 'Lunch Banquet',
-      segments: [
-        { time: '11:45 am', label: 'Pre-Reception',           location: VENUE, start: '20261206T034500Z', end: '20261206T043000Z' },
-        { time: '12:30 pm', label: 'Lunch Commences',         location: VENUE, start: '20261206T043000Z', end: '20261206T073500Z' },
-        { time:  '3:35 pm', label: 'Event Concludes',         location: VENUE, start: null, end: null },
-      ]
-    }
-  ],
-  dinner: [
-    {
-      groupLabel: 'Lunch Banquet',
-      segments: [
-        { time: '11:45 am', label: 'Pre-Reception',           location: VENUE, start: '20261206T034500Z', end: '20261206T043000Z' },
-        { time: '12:30 pm', label: 'Lunch Commences',         location: VENUE, start: '20261206T043000Z', end: '20261206T073500Z' },
-        { time:  '3:35 pm', label: 'Event Concludes',         location: VENUE, start: null, end: null },
-      ]
-    }
-  ]
-};
+// Schedule fetched from Sheet — cached after first load
+let scheduleCache = null;
 
+// Called when RSVP page loads — pre-fetches schedule in background
 function renderSchedule() {
-  const body   = document.getElementById('scheduleBody');
+  fetchSchedule().then(events => {
+    if (events) buildScheduleDOM(events);
+  });
+}
+
+async function fetchSchedule() {
+  if (scheduleCache) return scheduleCache;
+  try {
+    const resp = await fetch(`${WORKER_URL}/api/schedule?tier=${eventTier}`);
+    const data = await resp.json();
+    if (data.success && data.schedule) {
+      scheduleCache = data.schedule;
+      return scheduleCache;
+    }
+  } catch(e) { /* non-fatal */ }
+  return null;
+}
+
+function buildScheduleDOM(events) {
+  const body = document.getElementById('scheduleBody');
   if (!body) return;
-  const groups = SCHEDULE[eventTier] || SCHEDULE.dinner;
   body.innerHTML = '';
 
-  groups.forEach((group, gi) => {
-    // Group divider
-    const div = document.createElement('div');
-    div.className = 'sch-divider';
-    div.innerHTML = `<div class="sch-divider-line"></div>
-      <span class="sch-divider-label">${group.groupLabel}</span>
-      <div class="sch-divider-line"></div>`;
-    body.appendChild(div);
+  if (!events.length) {
+    body.innerHTML = '<p style="padding:24px;text-align:center;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--text-light)">Schedule coming soon.</p>';
+    return;
+  }
 
-    group.segments.forEach(seg => {
-      const item = document.createElement('div');
-      item.className = 'sch-item';
-      const calBtn = seg.start
-        ? `<button class="sch-cal-btn" data-seg="${encodeURIComponent(JSON.stringify(seg))}" onclick="handleIcal(this)">+ iCal</button>`
-        : '';
-      item.innerHTML = `
-        <span class="sch-time">${seg.time}</span>
-        <div class="sch-info">
-          <p class="sch-event">${seg.label}</p>
-          <p class="sch-loc">${seg.location}</p>
-        </div>
-        ${calBtn}`;
-      body.appendChild(item);
-    });
+  events.forEach(ev => {
+    // Format HH:MM → h:mm am/pm
+    const fmtTime = (t) => {
+      if (!t) return '';
+      const [h, m] = t.split(':').map(Number);
+      const ampm = h >= 12 ? 'pm' : 'am';
+      const h12  = h % 12 || 12;
+      return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    };
+
+    // Build UTC datetime string for iCal from HH:MM (SGT = UTC+8)
+    const toUtc = (t) => {
+      if (!t) return null;
+      const [h, m] = t.split(':').map(Number);
+      const utcH = h - 8; // SGT to UTC
+      // Handle day rollback if utcH < 0 (won't apply for these times)
+      return `20261206T${String((utcH + 24) % 24).padStart(2,'0')}${String(m).padStart(2,'0')}00Z`;
+    };
+
+    const item = document.createElement('div');
+    item.className = 'sch-item';
+
+    const startUtc = toUtc(ev.start);
+    const endUtc   = toUtc(ev.end);
+    const seg = { label: ev.event, location: VENUE, start: startUtc, end: endUtc };
+    const calBtn = ev.calendar && startUtc && endUtc
+      ? `<button class="sch-cal-btn" data-seg="${encodeURIComponent(JSON.stringify(seg))}" onclick="handleIcal(this)">+ iCal</button>`
+      : '';
+
+    item.innerHTML = `
+      <div class="sch-info" style="flex:1">
+        <p class="sch-event">${ev.event}</p>
+        <p class="sch-loc">${fmtTime(ev.start)}${ev.end ? ' — ' + fmtTime(ev.end) : ''}</p>
+      </div>
+      ${calBtn}`;
+    body.appendChild(item);
   });
 }
 
 function openSchedule() {
   document.getElementById('schedule-drawer').classList.add('open');
   document.body.style.overflow = 'hidden';
+  // Load schedule on first open if pre-fetch hasn't completed
+  if (!scheduleCache) {
+    fetchSchedule().then(events => { if (events) buildScheduleDOM(events); });
+  }
 }
 
 function closeSchedule() {
@@ -1452,19 +1542,16 @@ function closeSchedule() {
 }
 
 // ── iCal download ──────────────────────────────────────────────
-// Generates a .ics file in the browser — no server needed
 function handleIcal(btn) {
   try {
     const seg = JSON.parse(decodeURIComponent(btn.dataset.seg));
     downloadIcal(seg);
-  } catch(e) {
-    console.error('iCal parse error:', e);
-  }
+  } catch(e) { console.error('iCal parse error:', e); }
 }
 
 function downloadIcal(seg) {
-  const uid     = `${seg.label.replace(/\s+/g,'-').toLowerCase()}-bz2026@wedding`;
-  const now     = new Date().toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
+  const uid = `${seg.label.replace(/\s+/g,'-').toLowerCase()}-bz2026@wedding`;
+  const now = new Date().toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
