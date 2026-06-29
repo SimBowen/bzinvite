@@ -877,10 +877,13 @@ async function loadPhotosAndStart() {
 function buildMontageFromUrls(uris) {
   const wrap = document.getElementById('montageWrap');
 
+  // Ensure we always have PHOTO_COUNT slots even if URLs failed
+  const safeUris = Array.from({ length: PHOTO_COUNT }, (_, i) => uris[i] || null);
+
   if (isMobile) {
-    buildMobileStrip(wrap, uris);
+    buildMobileStrip(wrap, safeUris);
   } else {
-    buildDesktopSlides(wrap, uris);
+    buildDesktopSlides(wrap, safeUris);
   }
 
   montageReady = true;
@@ -997,11 +1000,18 @@ function goToPhoto(n) {
   clearInterval(progressTimer);
   progElapsed = 0;
 
-  document.getElementById(`ps${cur}`).classList.remove('active');
-  document.querySelectorAll('.sdot')[cur].classList.remove('active');
+  const prevSlide = document.getElementById(`ps${cur}`);
+  if (prevSlide) prevSlide.classList.remove('active');
+  const prevDot = document.querySelectorAll('.sdot')[cur];
+  if (prevDot) prevDot.classList.remove('active');
+
   cur = ((n % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT;
-  document.getElementById(`ps${cur}`).classList.add('active');
-  document.querySelectorAll('.sdot')[cur].classList.add('active');
+
+  const nextSlide = document.getElementById(`ps${cur}`);
+  if (nextSlide) nextSlide.classList.add('active');
+  const nextDot = document.querySelectorAll('.sdot')[cur];
+  if (nextDot) nextDot.classList.add('active');
+
   startProgress();
 }
 
