@@ -234,6 +234,16 @@
   .faq-a p{font-size:14px;color:var(--text-mid);line-height:1.75;padding:0 0 16px;font-weight:300;}
   .faq-loading{padding:24px;text-align:center;font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:var(--text-light);}
 
+  /* ── EVENT SEGMENT CHECKBOXES ── */
+  .segment-check-section{background:rgba(208,232,245,0.15);border:1px solid rgba(168,207,224,0.25);border-radius:2px;padding:16px 18px;}
+  .segment-check-label{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-blue);font-weight:300;margin-bottom:12px;display:block;}
+  .segment-check-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(168,207,224,0.12);}
+  .segment-check-row:last-child{border-bottom:none;}
+  .segment-check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--deep-blue);cursor:pointer;flex-shrink:0;}
+  .segment-check-info{flex:1;}
+  .segment-check-name{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--text-dark);}
+  .segment-check-time{font-size:11px;color:var(--text-light);letter-spacing:0.05em;}
+
   /* ── SCHEDULE DRAWER ── */
   #schedule-btn{position:fixed;bottom:24px;right:130px;z-index:100;
     background:linear-gradient(135deg,var(--blue),var(--deep-blue));
@@ -478,6 +488,32 @@
               <button class="pax-btn" type="button" onclick="adjustPax(1)">+</button>
             </div>
             <span class="pax-max" id="paxMax"></span>
+          </div>
+        </div>
+
+        <!-- Segment attendance checkboxes — only shown for full tier guests -->
+        <div id="segmentChecks" style="display:none">
+          <div class="segment-check-section">
+            <span class="segment-check-label">Which parts will you be attending?</span>
+
+            <!-- Overall select-all row -->
+            <div class="segment-check-row" style="border-bottom:1px solid rgba(168,207,224,0.2);margin-bottom:4px;padding-bottom:10px;">
+              <input type="checkbox" id="chkAllSolemn" checked onchange="toggleAllSegment('solemn', this.checked)">
+              <div class="segment-check-info">
+                <p class="segment-check-name" style="font-weight:400">Solemnisation &amp; Tea Ceremony — All guests</p>
+                <p class="segment-check-time">10:45 am — 12:15 pm · uncheck if only joining for lunch</p>
+              </div>
+            </div>
+            <div class="segment-check-row" style="margin-bottom:4px;">
+              <input type="checkbox" id="chkAllLunch" checked onchange="toggleAllSegment('lunch', this.checked)">
+              <div class="segment-check-info">
+                <p class="segment-check-name" style="font-weight:400">Lunch Banquet — All guests</p>
+                <p class="segment-check-time">12:30 pm — 3:35 pm</p>
+              </div>
+            </div>
+
+            <!-- Per-guest overrides injected here by renderGuestSegments() -->
+            <div id="guestSegmentRows"></div>
           </div>
         </div>
 
@@ -1030,6 +1066,9 @@ function selectAtt(v) {
     document.getElementById('paxDisplay').textContent = 1;
     document.getElementById('paxMax').textContent = paxAllowed > 1
       ? `Up to ${paxAllowed} guests` : '';
+    // Show segment checkboxes only for full tier guests
+    document.getElementById('segmentChecks').style.display =
+      eventTier === 'full' ? 'block' : 'none';
     renderGuestRows(1);
   }
 }
@@ -1088,6 +1127,73 @@ function renderGuestRows(count) {
       </div>`;
     container.appendChild(div);
   }
+
+  // Re-render per-guest segment rows if full tier
+  if (eventTier === 'full') renderGuestSegments(count);
+}
+
+// Render per-guest segment override checkboxes
+// Only shown when pax > 1 (pointless for a single guest)
+function renderGuestSegments(count) {
+  const container = document.getElementById('guestSegmentRows');
+  if (!container) return;
+
+  if (count <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = `
+    <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--deep-blue);opacity:0.6;margin:12px 0 8px;font-weight:300;">
+      Individual overrides
+    </p>`;
+
+  for (let i = 0; i < count; i++) {
+    const label   = i === 0 ? 'Guest 1 (You)' : `Guest ${i + 1}`;
+    const solemnChecked = document.getElementById('chkAllSolemn')?.checked !== false;
+    const lunchChecked  = document.getElementById('chkAllLunch')?.checked  !== false;
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:8px 0;border-bottom:1px solid rgba(168,207,224,0.1);display:flex;flex-direction:column;gap:6px;';
+    row.innerHTML = `
+      <p style="font-size:11px;letter-spacing:0.1em;color:var(--text-mid);font-family:'Cormorant Garamond',serif;font-style:italic;">${label}</p>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-dark);">
+          <input type="checkbox" class="g-chk-solemn" data-idx="${i}"
+            ${solemnChecked ? 'checked' : ''}
+            onchange="syncOverallCheckbox('solemn')"
+            style="width:15px;height:15px;accent-color:var(--deep-blue);cursor:pointer;">
+          Solemnisation &amp; Tea
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-dark);">
+          <input type="checkbox" class="g-chk-lunch" data-idx="${i}"
+            ${lunchChecked ? 'checked' : ''}
+            onchange="syncOverallCheckbox('lunch')"
+            style="width:15px;height:15px;accent-color:var(--deep-blue);cursor:pointer;">
+          Lunch Banquet
+        </label>
+      </div>`;
+    container.appendChild(row);
+  }
+}
+
+// Toggle all per-guest checkboxes when overall is clicked
+function toggleAllSegment(type, checked) {
+  const cls = type === 'solemn' ? '.g-chk-solemn' : '.g-chk-lunch';
+  document.querySelectorAll(cls).forEach(chk => { chk.checked = checked; });
+}
+
+// Update overall checkbox to indeterminate/checked/unchecked
+// based on per-guest state
+function syncOverallCheckbox(type) {
+  const cls    = type === 'solemn' ? '.g-chk-solemn' : '.g-chk-lunch';
+  const allId  = type === 'solemn' ? 'chkAllSolemn'  : 'chkAllLunch';
+  const boxes  = [...document.querySelectorAll(cls)];
+  if (!boxes.length) return;
+  const allChecked  = boxes.every(b => b.checked);
+  const noneChecked = boxes.every(b => !b.checked);
+  const master = document.getElementById(allId);
+  master.checked       = allChecked;
+  master.indeterminate = !allChecked && !noneChecked;
 }
 
 function toggleDietaryOther(select) {
@@ -1117,7 +1223,16 @@ async function submitRsvp() {
       const dietary      = row.querySelector('.g-dietary').value;
       const dietaryOther = dietary === 'other'
         ? row.querySelector('.g-dietary-other').value.trim() : '';
-      guests.push({ firstName, lastName, dietary, dietaryOther });
+      // Per-guest segment overrides (full tier only, multi-guest only)
+      const gChkSolemn = document.querySelector(`.g-chk-solemn[data-idx="${i}"]`);
+      const gChkLunch  = document.querySelector(`.g-chk-lunch[data-idx="${i}"]`);
+      const solemnAtt  = eventTier === 'full' && gChkSolemn
+        ? gChkSolemn.checked
+        : (eventTier === 'full' ? document.getElementById('chkAllSolemn').checked : null);
+      const lunchAtt   = eventTier === 'full' && gChkLunch
+        ? gChkLunch.checked
+        : (eventTier === 'full' ? document.getElementById('chkAllLunch').checked : null);
+      guests.push({ firstName, lastName, dietary, dietaryOther, solemnAtt, lunchAtt });
     });
     if (!valid) {
       errorEl.textContent = 'Please fill in the first and last name for all guests.';
@@ -1129,10 +1244,14 @@ async function submitRsvp() {
   }
 
   const payload = {
-    action:    'submitRsvp',
-    id:         guestId,
-    attending:  att,
-    guests:     guests,
+    action:         'submitRsvp',
+    id:              guestId,
+    attending:       att,
+    guests:          guests,
+    attending_solemn: isYes && eventTier === 'full'
+      ? document.getElementById('chkAllSolemn').checked : null,
+    attending_lunch: isYes && eventTier === 'full'
+      ? document.getElementById('chkAllLunch').checked : null,
     email:      isYes ? document.getElementById('guestEmail').value.trim() : '',
     address:    isYes ? document.getElementById('address').value.trim() : '',
     message:    isYes ? document.getElementById('message').value.trim() : '',
