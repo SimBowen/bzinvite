@@ -1003,11 +1003,11 @@ function renderGuestRows(count) {
       <div class="name-pair">
         <div>
           <label class="flabel">First Name</label>
-          <input class="finput g-first" type="text" placeholder="First name" value="${prev.firstName}">
+          <input class="finput g-first" type="text" placeholder="First name" value="${prev.firstName || ''}">
         </div>
         <div>
           <label class="flabel">Last Name</label>
-          <input class="finput g-last" type="text" placeholder="Last name" value="${prev.lastName}">
+          <input class="finput g-last" type="text" placeholder="Last name" value="${prev.lastName || ''}">
         </div>
       </div>
       <label class="flabel">Dietary Requirements</label>
@@ -1018,7 +1018,7 @@ function renderGuestRows(count) {
         <option value="other"       ${prev.dietary==='other'       ?'selected':''}>Other</option>
       </select>
       <div class="dietary-other-wrap ${prev.dietary==='other'?'vis':''}">
-        <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${prev.dietaryOther}">
+        <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${prev.dietaryOther || ''}">
       </div>`;
     container.appendChild(div);
   }
