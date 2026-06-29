@@ -1427,7 +1427,7 @@ function renderSchedule() {
       const item = document.createElement('div');
       item.className = 'sch-item';
       const calBtn = seg.start
-        ? `<button class="sch-cal-btn" onclick="downloadIcal(${JSON.stringify(seg).replace(/'/g, '&#39;')})">+ iCal</button>`
+        ? `<button class="sch-cal-btn" data-seg="${encodeURIComponent(JSON.stringify(seg))}" onclick="handleIcal(this)">+ iCal</button>`
         : '';
       item.innerHTML = `
         <span class="sch-time">${seg.time}</span>
@@ -1453,6 +1453,15 @@ function closeSchedule() {
 
 // ── iCal download ──────────────────────────────────────────────
 // Generates a .ics file in the browser — no server needed
+function handleIcal(btn) {
+  try {
+    const seg = JSON.parse(decodeURIComponent(btn.dataset.seg));
+    downloadIcal(seg);
+  } catch(e) {
+    console.error('iCal parse error:', e);
+  }
+}
+
 function downloadIcal(seg) {
   const uid     = `${seg.label.replace(/\s+/g,'-').toLowerCase()}-bz2026@wedding`;
   const now     = new Date().toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
