@@ -504,8 +504,8 @@
       </div>
       <div class="rsvp-fields" id="rsvpFields">
 
-        <!-- Number of guests (capped by pax from Sheet) -->
-        <div>
+        <!-- Number of guests (capped by pax from Sheet) — hidden entirely if pax allowance is 1 -->
+        <div id="paxSelectorWrap">
           <label class="flabel">Number of guests attending</label>
           <div class="pax-row">
             <div class="pax-counter">
@@ -1104,6 +1104,9 @@ function selectAtt(v) {
     document.getElementById('paxDisplay').textContent = 1;
     document.getElementById('paxMax').textContent = paxAllowed > 1
       ? `Up to ${paxAllowed} guests` : '';
+    // Hide the pax selector entirely when only 1 guest is allowed — nothing to choose
+    document.getElementById('paxSelectorWrap').style.display =
+      paxAllowed > 1 ? 'block' : 'none';
     // Show segment checkboxes only for full tier guests
     document.getElementById('segmentChecks').style.display =
       eventTier === 'full' ? 'block' : 'none';
