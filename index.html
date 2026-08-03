@@ -95,12 +95,9 @@
     transition:opacity 1.2s ease;
   }
   .desktop-montage .photo-slide.active{opacity:1;}
-  .desktop-montage .photo-slide.active .slide-bg{animation:kenBurns 5.5s ease forwards;}
-  @keyframes kenBurns{from{transform:scale(1.06)}to{transform:scale(1)}}
   .desktop-montage .slide-bg{
     position:absolute;inset:0;
-    background-size:cover;background-position:center center;
-    transform:scale(1.06);
+    background-size:cover;background-position:center center;background-repeat:no-repeat;
   }
   .slide-dots{position:absolute;bottom:28px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:10;}
   .sdot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.25);transition:background 0.4s,transform 0.4s,width 0.4s;cursor:pointer;}
@@ -133,7 +130,7 @@
   }
   .mobile-slide .slide-bg{
     position:absolute;inset:0;
-    background-size:cover;background-position:center center;
+    background-size:cover;background-position:center center;background-repeat:no-repeat;
   }
   /* Scroll indicator on mobile */
   .mobile-scroll-hint{
@@ -316,6 +313,11 @@
   .rsvp-top{padding-top:40px;text-align:center;margin-bottom:28px;}
   .rsvp-h{font-family:'Cormorant Garamond',serif;font-size:clamp(30px,5vw,42px);font-weight:300;color:var(--text-dark);margin-bottom:8px;}
   .rsvp-sub{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);font-weight:300;}
+  .rsvp-editing-banner{display:none;background:rgba(208,232,245,0.35);border:1px solid rgba(168,207,224,0.4);border-radius:2px;padding:12px 16px;margin-bottom:18px;text-align:center;font-size:12px;color:var(--deep-blue);letter-spacing:0.03em;}
+  .rsvp-editing-banner.vis{display:block;}
+  .rsvp-closed{display:none;text-align:center;padding:40px 20px;}
+  .rsvp-closed.vis{display:block;}
+  .rsvp-closed p{font-family:'Cormorant Garamond',serif;font-size:17px;font-style:italic;color:var(--text-mid);line-height:1.8;}
   .attend-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
   .att-btn{padding:14px;border:1.5px solid rgba(201,169,110,0.28);background:transparent;border-radius:2px;cursor:pointer;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.18em;color:var(--text-mid);text-transform:uppercase;font-weight:300;transition:all 0.25s;}
   .att-btn:hover{border-color:var(--rose);background:rgba(247,214,224,0.2);color:var(--deep-rose);}
@@ -334,6 +336,10 @@
   .guest-rows{display:flex;flex-direction:column;gap:18px;margin-top:4px;}
   .guest-row{background:rgba(247,214,224,0.08);border:1px solid rgba(201,169,110,0.15);border-radius:2px;padding:16px;}
   .guest-row-label{font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--deep-rose);font-weight:300;margin-bottom:12px;}
+  .guest-row-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .guest-row-head .guest-row-label{margin-bottom:0;}
+  .guest-remove-btn{background:none;border:none;color:var(--text-light);font-size:11px;letter-spacing:0.08em;cursor:pointer;padding:2px 6px;transition:color 0.2s;font-family:'Jost',sans-serif;font-weight:300;}
+  .guest-remove-btn:hover{color:#b05050;}
   .name-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
   .dietary-other-wrap{display:none;margin-top:8px;}
   .dietary-other-wrap.vis{display:block;}
@@ -497,7 +503,11 @@
       <h2 class="rsvp-h">Kindly Reply</h2>
       <p class="rsvp-sub">Please respond by 31 October 2026</p>
     </div>
+    <div class="rsvp-closed" id="rsvpClosed">
+      <p>RSVPs closed on 31 October 2026.<br>If you need to make a change, please reach out to us directly. 💌</p>
+    </div>
     <div id="rsvpFormArea">
+      <div class="rsvp-editing-banner" id="editingBanner">You've already responded — feel free to make changes below anytime before the RSVP deadline.</div>
       <div class="attend-row">
         <button class="att-btn" id="btnYes" onclick="selectAtt('yes')">✓ &nbsp;Joyfully Accepts</button>
         <button class="att-btn" id="btnNo"  onclick="selectAtt('no')">✕ &nbsp;Regretfully Declines</button>
@@ -632,6 +642,7 @@
 // CONFIGURATION
 // ══════════════════════════════════════════════
 const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev';
+const RSVP_DEADLINE     = new Date('2026-10-31T23:59:59+08:00'); // SGT — edits and new RSVPs locked after this
 const PHOTO_COUNT      = 5;   // both desktop and mobile use 5 photos
 const SLIDE_DURATION   = 3000; // ms per slide (desktop auto-advance)
 const MOBILE_BREAKPOINT = 768; // px — below this = mobile mode
@@ -681,7 +692,91 @@ window.addEventListener('DOMContentLoaded', () => {
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if (id === 'pg-rsvp') revealMapAndFaq();
+  if (id === 'pg-rsvp') {
+    revealMapAndFaq();
+    if (isPastRsvpDeadline()) {
+      document.getElementById('rsvpFormArea').style.display = 'none';
+      if (guestData && guestData.rsvped) {
+        // They already have a response on file — show it as a confirmation,
+        // not a generic "closed" notice, since from their perspective
+        // nothing is wrong: they responded in time and that's still valid.
+        const attending = guestData.attending === 'yes';
+        document.getElementById('sTitle').textContent = attending ? 'See you on the 6th!' : 'Thank you for letting us know';
+        document.getElementById('sBody').textContent  = attending
+          ? `You confirmed your attendance — we cannot wait to celebrate with you! 🌸 (RSVPs are now closed, so further changes aren't possible — please contact us directly if needed.)`
+          : `You let us know you won't be able to make it. We will miss you! (RSVPs are now closed.)`;
+        document.getElementById('success').classList.add('vis');
+      } else {
+        // Never responded and the deadline has passed
+        document.getElementById('rsvpClosed').classList.add('vis');
+      }
+    } else {
+      initRsvpForEditing();
+    }
+  }
+}
+
+// Returns true once the RSVP deadline has passed — both new RSVPs and
+// edits to existing ones are locked out at that point. Success screen
+// (for guests who already submitted before the cutoff) is unaffected —
+// this only gates rsvpFormArea, not the confirmation state.
+function isPastRsvpDeadline() {
+  return new Date() > RSVP_DEADLINE;
+}
+
+// ══════════════════════════════════════════════
+// EDIT MODE — pre-fills and unlocks the RSVP form when a guest who
+// has already responded reopens their invite link. Runs once per
+// page view; safe to call multiple times (guards on rsvpPrefilled).
+// ══════════════════════════════════════════════
+let rsvpPrefilled = false;
+
+function initRsvpForEditing() {
+  if (rsvpPrefilled) return;
+  if (!guestData || !guestData.rsvped) return; // first-time RSVP — nothing to pre-fill
+  rsvpPrefilled = true;
+
+  document.getElementById('editingBanner').classList.add('vis');
+
+  // Email lives on guestData itself (invite tab), not per previousGuests
+  // row — pre-fill it regardless of yes/no, since it's collected either way.
+  if (guestData.email) document.getElementById('guestEmail').value = guestData.email;
+
+  const wasAttending = guestData.attending === 'yes';
+  selectAtt(wasAttending ? 'yes' : 'no');
+
+  if (!wasAttending) return; // decline pre-fill needs nothing further
+
+  // Pax counter — default to their previous confirmed headcount, not 1
+  const prevPax = Math.min(guestData.attending_pax || 1, paxAllowed);
+  if (prevPax > 1) {
+    paxSelected = prevPax;
+    document.getElementById('paxDisplay').textContent = prevPax;
+    renderGuestRows(prevPax); // re-renders using guestData.previousGuests seed
+  }
+  // renderGuestRows(1) already ran inside selectAtt('yes') above when
+  // prevPax === 1, which is fine — it still seeds from previousGuests.
+
+  // Overall segment checkboxes — reflect the first previous guest's
+  // solemn/lunch attendance as the group default (individual overrides
+  // are already baked into previousGuests and applied when the
+  // per-guest override rows render inside renderGuestRows/renderGuestSegments).
+  const first = (guestData.previousGuests || [])[0];
+  if (eventTier === 'full' && first) {
+    if (first.solemnAtt !== null) document.getElementById('chkAllSolemn').checked = first.solemnAtt;
+    if (first.lunchAtt  !== null) document.getElementById('chkAllLunch').checked  = first.lunchAtt;
+  }
+
+  // Address / message / email — only ever stored once per submission
+  // (on the first guest row), so pull from there if present.
+  if (first) {
+    if (first.address) document.getElementById('address').value = first.address;
+    if (first.message) document.getElementById('message').value = first.message;
+  }
+
+  // Change the submit button label to reflect editing rather than first-time submit
+  const btn = document.getElementById('submitBtn');
+  if (btn) btn.textContent = acceptBtnLabel();
 }
 
 // ══════════════════════════════════════════════
@@ -844,12 +939,9 @@ async function loadPhotosAndStart() {
     eventTier  = guestData.event_tier || 'lunch';
     document.getElementById('guestName').textContent = guestData.name || 'Guest';
 
-    if (guestData.rsvped) {
-      stopWreathLoop();
-      showAlreadyRsvped();
-      return;
-    }
-
+    // Note: guests who already RSVPed are no longer redirected away —
+    // they proceed through the invite normally and land on a pre-filled,
+    // editable RSVP form (see transitionToDetails / initRsvpForEditing).
     photoUrls = data.photos || { landscape: [], portrait: [] };
 
   } catch (e) {
@@ -912,7 +1004,7 @@ function buildDesktopSlides(wrap, uris) {
     slide.id = `ps${i}`;
     const bgStyle = uri
       ? `background-image:url('${uri}')`
-      : 'background:linear-gradient(160deg,#1a0d14,#0e1320)';
+      : 'background-image:linear-gradient(160deg,#1a0d14,#0e1320)';
     slide.innerHTML = `<div class="slide-bg" style="${bgStyle}"></div><div class="slide-vignette"></div>`;
     slideContainer.appendChild(slide);
 
@@ -951,7 +1043,7 @@ function buildMobileStrip(wrap, uris) {
     slide.id = `ms${i}`;
     const bgStyle = uri
       ? `background-image:url('${uri}')`
-      : 'background:linear-gradient(160deg,#1a0d14,#0e1320)';
+      : 'background-image:linear-gradient(160deg,#1a0d14,#0e1320)';
     slide.innerHTML = `
       <div class="slide-bg" style="${bgStyle}"></div>
       <div class="slide-vignette"></div>`;
@@ -1061,20 +1153,8 @@ function skipToDetails() {
 // ══════════════════════════════════════════════
 async function transitionToDetails() {
   // guestData already populated by /api/auth during photo loading
-  if (guestData && guestData.rsvped) { showAlreadyRsvped(); return; }
   showPage('pg-details');
   animateDetails();
-}
-
-function showAlreadyRsvped() {
-  showPage('pg-rsvp');
-  document.getElementById('rsvpFormArea').style.display = 'none';
-  document.getElementById('success').classList.add('vis');
-  const attending = guestData.attending === 'yes';
-  document.getElementById('sTitle').textContent = attending ? 'See you on the 6th!' : 'Thank you for letting us know';
-  document.getElementById('sBody').textContent  = attending
-    ? `You've already confirmed your attendance — we cannot wait to celebrate with you! 🌸`
-    : `You've already let us know you won't be able to make it. We will miss you!`;
 }
 
 function animateDetails() {
@@ -1123,55 +1203,122 @@ function adjustPax(delta) {
   renderGuestRows(next);
 }
 
+// ── Remove a specific guest row ─────────────────────────────────
+// Unlike the pax −/+ counter (which always trims from the end),
+// this drops the exact guest the person clicked "Remove" on and
+// shifts everyone after them up by one, so e.g. removing Guest 2
+// out of 3 keeps Guest 1 and what was Guest 3 (now Guest 2) — not
+// just chopping off the last row regardless of which one they meant.
+function removeGuest(idx) {
+  const rows = [...document.querySelectorAll('#guestRows .guest-row')];
+  if (rows.length <= 1) return; // nothing left to remove
+
+  // Snapshot current field values in DOM order, minus the removed index
+  const remaining = rows
+    .map((row, i) => ({
+      i,
+      firstName:    row.querySelector('.g-first')?.value || '',
+      lastName:     row.querySelector('.g-last')?.value  || '',
+      dietary:      row.querySelector('.g-dietary')?.value || 'none',
+      dietaryOther: row.querySelector('.g-dietary-other')?.value || '',
+    }))
+    .filter(g => g.i !== idx);
+
+  paxSelected = remaining.length;
+  document.getElementById('paxDisplay').textContent = paxSelected;
+
+  // Rebuild the guest-rows container directly from the filtered snapshot
+  // rather than going through renderGuestRows' own DOM-read path (which
+  // would re-read the DOM including the row we just want gone).
+  const container = document.getElementById('guestRows');
+  container.innerHTML = '';
+  remaining.forEach((g, newIdx) => {
+    injectGuestRow(container, newIdx, g);
+  });
+
+  if (eventTier === 'full') renderGuestSegments(paxSelected);
+}
+
 // ── Render guest name + dietary rows ──────────────────────────
 function renderGuestRows(count) {
   const container = document.getElementById('guestRows');
-  // Preserve existing values before re-rendering
+  // Preserve existing values before re-rendering — but only if the form
+  // already has rows in it. On the very first render (nothing in the DOM
+  // yet), seed instead from guestData.previousGuests if this is an edit
+  // of a prior RSVP, so the guest sees their old answers pre-filled.
   const existing = [];
-  container.querySelectorAll('.guest-row').forEach(row => {
-    existing.push({
-      firstName:     row.querySelector('.g-first')?.value  || '',
-      lastName:      row.querySelector('.g-last')?.value   || '',
-      dietary:       row.querySelector('.g-dietary')?.value || 'none',
-      dietaryOther:  row.querySelector('.g-dietary-other')?.value || '',
+  const domRows = container.querySelectorAll('.guest-row');
+
+  if (domRows.length > 0) {
+    domRows.forEach(row => {
+      existing.push({
+        firstName:     row.querySelector('.g-first')?.value  || '',
+        lastName:      row.querySelector('.g-last')?.value   || '',
+        dietary:       row.querySelector('.g-dietary')?.value || 'none',
+        dietaryOther:  row.querySelector('.g-dietary-other')?.value || '',
+      });
     });
-  });
+  } else if (guestData && Array.isArray(guestData.previousGuests) && guestData.previousGuests.length) {
+    guestData.previousGuests.forEach(g => {
+      existing.push({
+        firstName:    g.firstName    || '',
+        lastName:     g.lastName     || '',
+        dietary:      g.dietary      || 'none',
+        dietaryOther: g.dietaryOther || '',
+      });
+    });
+  }
 
   container.innerHTML = '';
   for (let i = 0; i < count; i++) {
-    const prev = existing[i] || {};
-    const isFirst = i === 0;
-    const label   = isFirst ? 'Guest 1 (You)' : `Guest ${i + 1}`;
-    const div = document.createElement('div');
-    div.className = 'guest-row';
-    div.innerHTML = `
-      <p class="guest-row-label">${label}</p>
-      <div class="name-pair">
-        <div>
-          <label class="flabel">First Name</label>
-          <input class="finput g-first" type="text" placeholder="First name" value="${prev.firstName || ''}">
-        </div>
-        <div>
-          <label class="flabel">Last Name</label>
-          <input class="finput g-last" type="text" placeholder="Last name" value="${prev.lastName || ''}">
-        </div>
-      </div>
-      <label class="flabel">Dietary Requirements</label>
-      <select class="fselect g-dietary" onchange="toggleDietaryOther(this)">
-        <option value="none"        ${prev.dietary==='none'        ?'selected':''}>None</option>
-        <option value="halal"       ${prev.dietary==='halal'       ?'selected':''}>Halal</option>
-        <option value="vegetarian"  ${prev.dietary==='vegetarian'  ?'selected':''}>Vegetarian</option>
-        <option value="kids"        ${prev.dietary==='kids'        ?'selected':''}>Kid's Meal</option>
-        <option value="other"       ${prev.dietary==='other'       ?'selected':''}>Other</option>
-      </select>
-      <div class="dietary-other-wrap ${prev.dietary==='other'?'vis':''}">
-        <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${prev.dietaryOther || ''}">
-      </div>`;
-    container.appendChild(div);
+    injectGuestRow(container, i, existing[i] || {});
   }
 
   // Re-render per-guest segment rows if full tier
   if (eventTier === 'full') renderGuestSegments(count);
+}
+
+// ── Shared row-builder ────────────────────────────────────────
+// Used by both renderGuestRows (pax +/- driven) and removeGuest
+// (drops one specific guest) so the two can never drift out of sync
+// on markup — a single source of truth for what a guest row looks like.
+function injectGuestRow(container, i, prev) {
+  const isFirst   = i === 0;
+  const label     = isFirst ? 'Guest 1 (You)' : `Guest ${i + 1}`;
+  // Guest 1 (You) can't be individually removed — if the person isn't
+  // attending, that's the "Regretfully Declines" path, not a per-row
+  // removal. Every other guest gets a remove button.
+  const removeBtn = isFirst ? '' : `<button type="button" class="guest-remove-btn" onclick="removeGuest(${i})">Remove ✕</button>`;
+
+  const div = document.createElement('div');
+  div.className = 'guest-row';
+  div.innerHTML = `
+    <div class="guest-row-head">
+      <p class="guest-row-label">${label}</p>
+      ${removeBtn}
+    </div>
+    <div class="name-pair">
+      <div>
+        <label class="flabel">First Name</label>
+        <input class="finput g-first" type="text" placeholder="First name" value="${prev.firstName || ''}">
+      </div>
+      <div>
+        <label class="flabel">Last Name</label>
+        <input class="finput g-last" type="text" placeholder="Last name" value="${prev.lastName || ''}">
+      </div>
+    </div>
+    <label class="flabel">Dietary Requirements</label>
+    <select class="fselect g-dietary" onchange="toggleDietaryOther(this)">
+      <option value="none"        ${prev.dietary==='none'        ?'selected':''}>None</option>
+      <option value="halal"       ${prev.dietary==='halal'       ?'selected':''}>Halal</option>
+      <option value="vegetarian"  ${prev.dietary==='vegetarian'  ?'selected':''}>Vegetarian</option>
+      <option value="kids"        ${prev.dietary==='kids'        ?'selected':''}>Kid's Meal</option>
+      <option value="other"       ${prev.dietary==='other'       ?'selected':''}>Other</option>
+    </select>
+    <div class="dietary-other-wrap ${prev.dietary==='other'?'vis':''}">
+      <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${prev.dietaryOther || ''}">
+    </div>`;
+  container.appendChild(div);
 }
 
 // Render per-guest segment override checkboxes
@@ -1243,6 +1390,15 @@ function toggleDietaryOther(select) {
   wrap.classList.toggle('vis', select.value === 'other');
 }
 
+// Returns the correct "accept" button label depending on whether this
+// is a first-time RSVP or an edit to a prior response — used both when
+// initially rendering the button and whenever it's re-enabled after an
+// error, so a failed submit attempt can't silently revert an editing
+// guest's button back to first-time wording.
+function acceptBtnLabel() {
+  return rsvpPrefilled ? 'Update RSVP ♡' : 'Send with Love ♡';
+}
+
 async function submitRsvp() {
   if (!att) { alert('Please select whether you will be attending.'); return; }
   const isYes   = att === 'yes';
@@ -1280,7 +1436,7 @@ async function submitRsvp() {
       errorEl.textContent = 'Please fill in the first and last name for all guests.';
       errorEl.classList.add('vis');
       btn.disabled = false;
-      btn.textContent = 'Send with Love ♡';
+      btn.textContent = acceptBtnLabel();
       return;
     }
   }
@@ -1309,91 +1465,123 @@ async function submitRsvp() {
     if (data.success) {
       document.getElementById('rsvpFormArea').style.display = 'none';
       document.getElementById('success').classList.add('vis');
+      const wasEdit = rsvpPrefilled; // true if this was an update to an existing response
       if (!isYes) {
         document.getElementById('sTitle').textContent = 'Thank you for letting us know';
         document.getElementById('sBody').textContent  = 'We will miss you dearly and will be thinking of you on our special day. 💙';
+      } else if (wasEdit) {
+        document.getElementById('sTitle').textContent = 'Response updated!';
+        document.getElementById('sBody').textContent  = 'Your changes have been saved. We cannot wait to celebrate with you! 🌸';
       }
     } else {
-      errorEl.textContent = data.message || 'Something went wrong. Please try again.';
+      errorEl.textContent = data.error || data.message || 'Something went wrong. Please try again.';
       errorEl.classList.add('vis');
       btn.disabled = false;
-      btn.textContent = isYes ? 'Send with Love ♡' : 'Confirm Decline';
+      btn.textContent = isYes ? acceptBtnLabel() : 'Confirm Decline';
     }
   } catch(e) {
     errorEl.textContent = 'Network error — please try again.';
     errorEl.classList.add('vis');
     btn.disabled = false;
-    btn.textContent = isYes ? 'Send with Love ♡' : 'Confirm Decline';
+    btn.textContent = isYes ? acceptBtnLabel() : 'Confirm Decline';
   }
 }
 
 // ══════════════════════════════════════════════
 // TIMELINE — builds inline on the invite details page
 // ══════════════════════════════════════════════
-function buildTimeline() {
+// ══════════════════════════════════════════════
+// TIMELINE — data-driven from the Schedule sheet.
+// Fetches the same /api/schedule endpoint the Schedule drawer uses
+// (shares its cache — whichever loads first populates both), then
+// renders one icon per event, auto-picking an icon by keyword match
+// on the event name. Server has already merged same-time events and
+// sorted chronologically, so this just needs to lay them out.
+// ══════════════════════════════════════════════
+
+const TL_ICONS = {
+  rings: `<svg viewBox="0 0 24 24"><circle cx="8.5" cy="12" r="4.5"/><circle cx="15.5" cy="12" r="4.5"/></svg>`,
+  tea: `<svg viewBox="0 0 100 100">
+    <path d="M26 44 C31 37 69 37 74 44" fill="rgba(196,114,138,0.12)" stroke="var(--deep-rose)" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="50" cy="34" r="3" fill="var(--deep-rose)"/>
+    <path d="M16 48 Q50 44 84 48" fill="rgba(196,114,138,0.06)" stroke="var(--deep-rose)" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M16 48 C19 54, 28 57, 32 62 C36 67, 38 71, 42 75 L58 75 C62 71, 64 67, 68 62 C72 57, 81 54, 84 48" fill="rgba(196,114,138,0.1)" stroke="var(--deep-rose)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="50" cy="75" rx="13" ry="2.2" fill="none" stroke="var(--deep-rose)" stroke-width="1"/>
+    <path d="M24 79 Q50 86 76 79" fill="rgba(196,114,138,0.08)" stroke="var(--deep-rose)" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M19 78 Q50 88 81 78" fill="rgba(196,114,138,0.05)" stroke="var(--deep-rose)" stroke-width="1.1" stroke-linecap="round"/>
+  </svg>`,
+  cocktail: `<svg viewBox="0 0 24 24">
+    <path d="M4 4 L12 14 L20 4 Z"/>
+    <line x1="12" y1="14" x2="12" y2="19.5"/>
+    <line x1="8.5" y1="19.5" x2="15.5" y2="19.5"/>
+    <line x1="14.5" y1="7" x2="17.5" y2="4.5"/>
+    <circle cx="17.8" cy="4.2" r="1.1" fill="var(--deep-rose)" stroke="none"/>
+    <circle cx="9.5" cy="9" r="0.5" fill="var(--deep-rose)" stroke="none"/>
+    <circle cx="12" cy="7.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
+    <circle cx="14" cy="9.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
+  </svg>`,
+  plate: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 8v3a1 1 0 0 0 2 0V8M10 11v5M14 8v8M14 8a2 2 0 0 1 2 2v1h-2"/></svg>`,
+  // Generic fallback for any event name that doesn't match a keyword below
+  star: `<svg viewBox="0 0 24 24"><path d="M12 3 L14.5 9.5 L21 10 L16 14.5 L17.5 21 L12 17.5 L6.5 21 L8 14.5 L3 10 L9.5 9.5 Z"/></svg>`,
+};
+
+// Pick an icon by matching keywords in the event name — case-insensitive.
+// Order matters: more specific terms checked first.
+function pickTimelineIcon(eventName) {
+  const n = eventName.toLowerCase();
+  if (n.includes('solemn') || n.includes('ceremony') && n.includes('wed')) return TL_ICONS.rings;
+  if (n.includes('tea'))                                                    return TL_ICONS.tea;
+  if (n.includes('reception') || n.includes('cocktail'))                    return TL_ICONS.cocktail;
+  if (n.includes('lunch') || n.includes('dinner') || n.includes('banquet')) return TL_ICONS.plate;
+  if (n.includes('solemn'))                                                 return TL_ICONS.rings;
+  return TL_ICONS.star;
+}
+
+function buildTimelineItem(icon, time, label, note) {
+  return `<div class="tl-item">
+    <div class="tl-icon-wrap">${icon}</div>
+    <div class="tl-dot"></div>
+    <div class="tl-labels">
+      <span class="tl-time">${time}</span>
+      <span class="tl-zh">${label}</span>
+      ${note ? `<span class="tl-note">${note}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+// Format 24hr "HH:MM" (as returned by /api/schedule) → "h:mm am/pm" for display.
+// Same conversion buildScheduleDOM() applies to its own copy — kept as a
+// shared helper so both call sites can't drift out of sync again.
+function fmtScheduleTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return t; // already formatted or malformed — show as-is
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+async function buildTimeline() {
   const container = document.getElementById('d7b');
   if (!container) return;
 
-  const isFull = eventTier === 'full';
+  const events = await fetchSchedule();
+  if (!events || !events.length) { container.innerHTML = ''; return; }
 
-  // SVG icon paths
-  const icons = {
-    rings: `<svg viewBox="0 0 24 24"><circle cx="8.5" cy="12" r="4.5"/><circle cx="15.5" cy="12" r="4.5"/></svg>`,
-    tea: `<svg viewBox="0 0 100 100">
-      <path d="M26 44 C31 37 69 37 74 44" fill="rgba(196,114,138,0.12)" stroke="var(--deep-rose)" stroke-width="1.2" stroke-linecap="round"/>
-      <circle cx="50" cy="34" r="3" fill="var(--deep-rose)"/>
-      <path d="M16 48 Q50 44 84 48" fill="rgba(196,114,138,0.06)" stroke="var(--deep-rose)" stroke-width="1.4" stroke-linecap="round"/>
-      <path d="M16 48 C19 54, 28 57, 32 62 C36 67, 38 71, 42 75 L58 75 C62 71, 64 67, 68 62 C72 57, 81 54, 84 48" fill="rgba(196,114,138,0.1)" stroke="var(--deep-rose)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-      <ellipse cx="50" cy="75" rx="13" ry="2.2" fill="none" stroke="var(--deep-rose)" stroke-width="1"/>
-      <path d="M24 79 Q50 86 76 79" fill="rgba(196,114,138,0.08)" stroke="var(--deep-rose)" stroke-width="1.1" stroke-linecap="round"/>
-      <path d="M19 78 Q50 88 81 78" fill="rgba(196,114,138,0.05)" stroke="var(--deep-rose)" stroke-width="1.1" stroke-linecap="round"/>
-    </svg>`,
-    cocktail: `<svg viewBox="0 0 24 24">
-      <path d="M4 4 L12 14 L20 4 Z"/>
-      <line x1="12" y1="14" x2="12" y2="19.5"/>
-      <line x1="8.5" y1="19.5" x2="15.5" y2="19.5"/>
-      <line x1="14.5" y1="7" x2="17.5" y2="4.5"/>
-      <circle cx="17.8" cy="4.2" r="1.1" fill="var(--deep-rose)" stroke="none"/>
-      <circle cx="9.5" cy="9" r="0.5" fill="var(--deep-rose)" stroke="none"/>
-      <circle cx="12" cy="7.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
-      <circle cx="14" cy="9.5" r="0.5" fill="var(--deep-rose)" stroke="none"/>
-    </svg>`,
-    plate: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M9 8v3a1 1 0 0 0 2 0V8M10 11v5M14 8v8M14 8a2 2 0 0 1 2 2v1h-2"/></svg>`,
-  };
+  const rowClass = events.length >= 4 ? 'tl-row tl-row-4' : 'tl-row';
+  const items = events.map((ev, i) => {
+    const icon = pickTimelineIcon(ev.event);
+    // "please be seated" note only on the very first milestone — matches
+    // prior hand-authored copy; purely cosmetic, safe to drop if unwanted.
+    const note = i === 0 ? 'please be seated' : '';
+    return buildTimelineItem(icon, fmtScheduleTime(ev.start), ev.event, note);
+  }).join('');
 
-  function makeItem(icon, time, zh, en, note) {
-    return `<div class="tl-item">
-      <div class="tl-icon-wrap">${icon}</div>
-      <div class="tl-dot"></div>
-      <div class="tl-labels">
-        <span class="tl-time">${time}</span>
-        <span class="tl-zh">${zh}</span>
-        <span class="tl-en">${en}</span>
-        ${note ? `<span class="tl-note">${note}</span>` : ''}
-      </div>
+  container.innerHTML = `
+    <div class="${rowClass}">
+      <div class="tl-line"></div>
+      ${items}
     </div>`;
-  }
-
-  let html = '';
-
-  if (isFull) {
-    html = `
-      <div class="tl-row">
-        <div class="tl-line"></div>
-        ${makeItem(icons.rings,    '10:45 am', '婚礼 & 敬茶仪式', 'Solemnisation & Tea Ceremony', 'please be seated')}
-        ${makeItem(icons.cocktail, '11:45 am', '迎宾接待',        'Pre-Reception',                '')}
-        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴',        'Lunch Banquet',                '')}
-      </div>`;
-  } else {
-    html = `
-      <div class="tl-row">
-        <div class="tl-line-short"></div>
-        ${makeItem(icons.cocktail, '11:45 am', '迎宾接待', 'Pre-Reception', '')}
-        ${makeItem(icons.plate,    '12:30 pm', '婚礼午宴', 'Lunch Banquet', 'please be seated')}
-      </div>`;
-  }
-
-  container.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════
@@ -1413,19 +1601,25 @@ function revealMapAndFaq() {
   const schBtn = document.getElementById('schedule-btn');
   if (schBtn) schBtn.classList.add('visible');
 
-  // Render schedule content based on tier
+  // Prefetch schedule and FAQ in background so drawers open instantly
   renderSchedule();
+  prefetchFaq();
 }
 
 // ── FAQ drawer ─────────────────────────────────
-let faqLoaded = false;
+let faqLoaded  = false;
+let faqLoading = null; // holds the in-flight promise so openFaq can await it
+
+function prefetchFaq() {
+  if (!faqLoading) faqLoading = loadFaq();
+}
 
 async function openFaq() {
   document.getElementById('faq-drawer').classList.add('open');
   document.body.style.overflow = 'hidden';
 
   if (!faqLoaded) {
-    await loadFaq();
+    await (faqLoading || loadFaq());
     faqLoaded = true;
   }
 }
@@ -1519,15 +1713,6 @@ function buildScheduleDOM(events) {
   }
 
   events.forEach(ev => {
-    // Format HH:MM → h:mm am/pm
-    const fmtTime = (t) => {
-      if (!t) return '';
-      const [h, m] = t.split(':').map(Number);
-      const ampm = h >= 12 ? 'pm' : 'am';
-      const h12  = h % 12 || 12;
-      return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
-    };
-
     // Build UTC datetime string for iCal from HH:MM (SGT = UTC+8)
     const toUtc = (t) => {
       if (!t) return null;
@@ -1550,7 +1735,7 @@ function buildScheduleDOM(events) {
     item.innerHTML = `
       <div class="sch-info" style="flex:1">
         <p class="sch-event">${ev.event}</p>
-        <p class="sch-loc">${fmtTime(ev.start)}${ev.end ? ' — ' + fmtTime(ev.end) : ''}</p>
+        <p class="sch-loc">${fmtScheduleTime(ev.start)}${ev.end ? ' — ' + fmtScheduleTime(ev.end) : ''}</p>
       </div>
       ${calBtn}`;
     body.appendChild(item);
@@ -1575,8 +1760,54 @@ function closeSchedule() {
 function handleIcal(btn) {
   try {
     const seg = JSON.parse(decodeURIComponent(btn.dataset.seg));
-    downloadIcal(seg);
+    addToCalendar(seg);
   } catch(e) { console.error('iCal parse error:', e); }
+}
+
+// ── Platform-aware "Add to Calendar" ──────────────────────────
+// iOS Safari refuses Blob/data: URL calendar downloads ("cannot
+// download") — it needs a real served file, so iOS routes through
+// the Worker's /api/ics endpoint (opens natively in Calendar app).
+// Android has no equivalent .ics handoff by default, so it deep-links
+// to Google Calendar with the event prefilled instead.
+// Desktop keeps the original Blob download — works everywhere else.
+function detectPlatform() {
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
+  if (/Android/.test(ua)) return 'android';
+  return 'desktop';
+}
+
+function addToCalendar(seg) {
+  const platform = detectPlatform();
+
+  if (platform === 'ios') {
+    const params = new URLSearchParams({
+      label:    seg.label,
+      location: seg.location,
+      start:    seg.start,
+      end:      seg.end,
+    });
+    // Direct navigation — iOS Safari opens .ics responses in Calendar natively
+    window.location.href = `${WORKER_URL}/api/ics?${params.toString()}`;
+    return;
+  }
+
+  if (platform === 'android') {
+    // Google Calendar deep link with the event prefilled
+    const gcalParams = new URLSearchParams({
+      action:   'TEMPLATE',
+      text:     `${seg.label} — Bowen & Zi Qin`,
+      dates:    `${seg.start}/${seg.end}`,
+      location: seg.location,
+      details:  `You are invited to celebrate the wedding of Bowen & Zi Qin.`,
+    });
+    window.open(`https://calendar.google.com/calendar/render?${gcalParams.toString()}`, '_blank');
+    return;
+  }
+
+  // Desktop — original Blob download
+  downloadIcal(seg);
 }
 
 function downloadIcal(seg) {
