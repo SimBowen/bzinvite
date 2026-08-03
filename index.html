@@ -501,10 +501,10 @@
   <div class="rsvp-inner">
     <div class="rsvp-top">
       <h2 class="rsvp-h">Kindly Reply</h2>
-      <p class="rsvp-sub">Please respond by 31 October 2026</p>
+      <p class="rsvp-sub" id="rsvpDeadlineText">Please respond by 31 October 2026</p>
     </div>
     <div class="rsvp-closed" id="rsvpClosed">
-      <p>RSVPs closed on 31 October 2026.<br>If you need to make a change, please reach out to us directly. 💌</p>
+      <p id="rsvpClosedText">RSVPs closed on 31 October 2026.<br>If you need to make a change, please reach out to us directly. 💌</p>
     </div>
     <div id="rsvpFormArea">
       <div class="rsvp-editing-banner" id="editingBanner">You've already responded — feel free to make changes below anytime before the RSVP deadline.</div>
@@ -694,6 +694,7 @@ function showPage(id) {
   document.getElementById(id).classList.add('active');
   if (id === 'pg-rsvp') {
     revealMapAndFaq();
+    updateDeadlineText();
     if (isPastRsvpDeadline()) {
       document.getElementById('rsvpFormArea').style.display = 'none';
       if (guestData && guestData.rsvped) {
@@ -716,12 +717,39 @@ function showPage(id) {
   }
 }
 
-// Returns true once the RSVP deadline has passed — both new RSVPs and
-// edits to existing ones are locked out at that point. Success screen
-// (for guests who already submitted before the cutoff) is unaffected —
-// this only gates rsvpFormArea, not the confirmation state.
+// Returns true once this guest's own RSVP deadline has passed — both
+// new RSVPs and edits to existing ones are locked out at that point.
+// Success screen (for guests who already submitted before the cutoff)
+// is unaffected — this only gates rsvpFormArea, not the confirmation state.
+//
+// guestData.due (set by Apps Script's per-invite 'due' column) takes
+// precedence when present; otherwise falls back to the global
+// RSVP_DEADLINE constant, matching the same precedence Code.gs applies
+// server-side so the two can never disagree about whether RSVPs are open.
 function isPastRsvpDeadline() {
-  return new Date() > RSVP_DEADLINE;
+  return new Date() > effectiveDeadline();
+}
+
+// Returns this guest's effective deadline as a Date — same precedence
+// as isPastRsvpDeadline(), factored out so both the check and the
+// display text always agree on which date is actually in effect.
+function effectiveDeadline() {
+  return (guestData && guestData.due) ? new Date(guestData.due) : RSVP_DEADLINE;
+}
+
+// Updates the "Please respond by..." and "RSVPs closed on..." copy to
+// reflect this specific guest's deadline, since per-invite 'due' dates
+// mean not everyone sees the same cutoff. Formatted as "31 October 2026"
+// to match the site's existing date style.
+function updateDeadlineText() {
+  const d = effectiveDeadline();
+  const formatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Singapore' });
+
+  const subEl = document.getElementById('rsvpDeadlineText');
+  if (subEl) subEl.textContent = `Please respond by ${formatted}`;
+
+  const closedEl = document.getElementById('rsvpClosedText');
+  if (closedEl) closedEl.innerHTML = `RSVPs closed on ${formatted}.<br>If you need to make a change, please reach out to us directly. 💌`;
 }
 
 // ══════════════════════════════════════════════
