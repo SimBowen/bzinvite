@@ -558,7 +558,7 @@
 
         <!-- Group-level fields — one per submission -->
         <div>
-          <label class="flabel">Email <span style="opacity:0.5;font-size:9px">(optional — for notifications)</span></label>
+          <label class="flabel">Email <span id="emailHint" style="opacity:0.5;font-size:9px">(optional — for notifications)</span></label>
           <input class="finput" type="email" id="guestEmail" placeholder="your@email.com">
         </div>
 
@@ -585,6 +585,10 @@
       <div class="s-icon">🌸</div>
       <h3 class="s-title" id="sTitle">Thank you!</h3>
       <p class="s-body"  id="sBody">Your RSVP has been received. We cannot wait to celebrate with you!</p>
+      <div id="editLinkBox" style="display:none;margin-top:20px;padding:16px;background:rgba(247,214,224,0.15);border:1px solid rgba(201,169,110,0.2);border-radius:2px;">
+        <p style="font-size:11px;letter-spacing:0.05em;color:var(--text-mid);margin-bottom:8px;">We've also emailed you this link — save it to edit your RSVP later:</p>
+        <a id="editLinkAnchor" href="#" style="font-size:12px;color:var(--deep-rose);word-break:break-all;text-decoration:underline;"></a>
+      </div>
     </div>
 
     <!-- Map -->
@@ -643,6 +647,7 @@
 // ══════════════════════════════════════════════
 const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev';
 const RSVP_DEADLINE     = new Date('2026-10-31T23:59:59+08:00'); // SGT — edits and new RSVPs locked after this
+const PUBLIC_MAX_PAX    = 2; // cap for the generic (non-personalised) public link — larger groups should use a personal tokened link, which has no such ceiling
 const PHOTO_COUNT      = 5;   // both desktop and mobile use 5 photos
 const SLIDE_DURATION   = 3000; // ms per slide (desktop auto-advance)
 const MOBILE_BREAKPOINT = 768; // px — below this = mobile mode
@@ -665,6 +670,14 @@ let paxAllowed    = 1;
 let paxSelected   = 1;
 let eventTier     = 'lunch'; // 'full' or 'lunch'
 
+// ── Public (non-personalised) mode ──────────────────────────────
+// Triggered by ?public=groom or ?public=bride instead of ?id=TOKEN.
+// No name greeting, no per-guest pax cap, no edit/pre-fill (there's
+// no token to look a returning visitor up by), always 'lunch' tier —
+// a public link shouldn't grant Solemnisation & Tea Ceremony access.
+let isPublic      = false;
+let publicSide    = null; // 'groom' or 'bride'
+
 // ══════════════════════════════════════════════
 // Petals
 // ══════════════════════════════════════════════
@@ -684,8 +697,23 @@ let eventTier     = 'lunch'; // 'full' or 'lunch'
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
-  guestId = params.get('id');
+  guestId  = params.get('id');
   isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+
+  const publicParam = (params.get('public') || '').trim().toLowerCase();
+  if (publicParam === 'groom' || publicParam === 'bride') {
+    isPublic   = true;
+    publicSide = publicParam;
+    // Public links default to lunch-only. Solemnisation & Tea Ceremony
+    // access requires an explicit &tier=full flag in the URL — never
+    // granted by default, since a public link could be shared beyond
+    // the intended audience.
+    const tierParam = (params.get('tier') || '').trim().toLowerCase();
+    eventTier = tierParam === 'full' ? 'full' : 'lunch';
+    showPage('pg-envelope');
+    return;
+  }
+
   showPage(guestId ? 'pg-envelope' : 'pg-locked');
 });
 
@@ -947,30 +975,45 @@ async function loadPhotosAndStart() {
   let photoUrls = { landscape: [], portrait: [] };
 
   try {
-    const resp = await fetch(`${WORKER_URL}/api/auth`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ id: guestId }),
-    });
+    if (isPublic) {
+      // Public link — no token, no guest lookup, just fetch photos.
+      // eventTier was already resolved at init time (lunch by default,
+      // or full if &tier=full was in the URL).
+      // Capped at PUBLIC_MAX_PAX — anyone bringing more than that should
+      // use a personal tokened link instead, which has no such ceiling.
+      paxAllowed = PUBLIC_MAX_PAX;
+      const resp = await fetch(`${WORKER_URL}/api/public-photos`);
+      const data = await resp.json();
+      clearInterval(fakeTick);
+      photoUrls = data.photos || { landscape: [], portrait: [] };
+      document.getElementById('guestName').textContent = 'Friend';
 
-    const data = await resp.json();
-    clearInterval(fakeTick);
+    } else {
+      const resp = await fetch(`${WORKER_URL}/api/auth`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id: guestId }),
+      });
 
-    if (!data.valid) {
-      stopWreathLoop();
-      showPage('pg-locked');
-      return;
+      const data = await resp.json();
+      clearInterval(fakeTick);
+
+      if (!data.valid) {
+        stopWreathLoop();
+        showPage('pg-locked');
+        return;
+      }
+
+      guestData = data.guest;
+      paxAllowed = parseInt(guestData.pax) || 1;
+      eventTier  = guestData.event_tier || 'lunch';
+      document.getElementById('guestName').textContent = guestData.name || 'Guest';
+
+      // Note: guests who already RSVPed are no longer redirected away —
+      // they proceed through the invite normally and land on a pre-filled,
+      // editable RSVP form (see transitionToDetails / initRsvpForEditing).
+      photoUrls = data.photos || { landscape: [], portrait: [] };
     }
-
-    guestData = data.guest;
-    paxAllowed = parseInt(guestData.pax) || 1;
-    eventTier  = guestData.event_tier || 'lunch';
-    document.getElementById('guestName').textContent = guestData.name || 'Guest';
-
-    // Note: guests who already RSVPed are no longer redirected away —
-    // they proceed through the invite normally and land on a pre-filled,
-    // editable RSVP form (see transitionToDetails / initRsvpForEditing).
-    photoUrls = data.photos || { landscape: [], portrait: [] };
 
   } catch (e) {
     clearInterval(fakeTick);
@@ -1210,6 +1253,8 @@ function selectAtt(v) {
     // Initialise pax controls once fields open
     paxSelected = 1;
     document.getElementById('paxDisplay').textContent = 1;
+    // Now a real, meaningful cap for public mode too (PUBLIC_MAX_PAX),
+    // not just a UI safety valve, so it's worth showing in both modes.
     document.getElementById('paxMax').textContent = paxAllowed > 1
       ? `Up to ${paxAllowed} guests` : '';
     // Hide the pax selector entirely when only 1 guest is allowed — nothing to choose
@@ -1219,6 +1264,16 @@ function selectAtt(v) {
     document.getElementById('segmentChecks').style.display =
       eventTier === 'full' ? 'block' : 'none';
     renderGuestRows(1);
+
+    // Email is required for public submissions (it's their only way
+    // back to edit an RSVP later, since the public URL carries no
+    // token) but stays optional for personalised links.
+    const emailHint = document.getElementById('emailHint');
+    if (emailHint) {
+      emailHint.textContent = isPublic
+        ? '(required — we\'ll email you a link to edit your RSVP)'
+        : '(optional — for notifications)';
+    }
   }
 }
 
@@ -1469,9 +1524,28 @@ async function submitRsvp() {
     }
   }
 
+  // Public link submissions have no way back to their RSVP afterward
+  // except via an emailed link — so unlike the personalised flow
+  // (where email is optional), it's required here.
+  const emailValue = document.getElementById('guestEmail').value.trim();
+  if (isPublic && isYes && !emailValue) {
+    errorEl.textContent = 'Please provide your email so we can send you a link to edit your RSVP later.';
+    errorEl.classList.add('vis');
+    btn.disabled = false;
+    btn.textContent = acceptBtnLabel();
+    return;
+  }
+
   const payload = {
     action:         'submitRsvp',
     id:              guestId,
+    // Public submissions have no existing token — Apps Script creates
+    // one on the fly when it sees publicSide set, and files the new row
+    // into the matching Groom Guests / Bride Guests tab. publicTier
+    // carries the &tier=full URL flag through — Apps Script re-validates
+    // it rather than trusting the client outright.
+    publicSide:      isPublic ? publicSide : null,
+    publicTier:      isPublic ? eventTier  : null,
     attending:       att,
     guests:          guests,
     attending_solemn: isYes && eventTier === 'full'
@@ -1500,6 +1574,14 @@ async function submitRsvp() {
       } else if (wasEdit) {
         document.getElementById('sTitle').textContent = 'Response updated!';
         document.getElementById('sBody').textContent  = 'Your changes have been saved. We cannot wait to celebrate with you! 🌸';
+      }
+
+      // Public submissions get their personal edit link shown on-screen
+      // too, as a fallback in case the emailed copy doesn't arrive.
+      if (data.editUrl) {
+        document.getElementById('editLinkAnchor').href = data.editUrl;
+        document.getElementById('editLinkAnchor').textContent = data.editUrl;
+        document.getElementById('editLinkBox').style.display = 'block';
       }
     } else {
       errorEl.textContent = data.error || data.message || 'Something went wrong. Please try again.';
