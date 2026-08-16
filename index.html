@@ -572,6 +572,16 @@
       </div>
       <div class="decline-note" id="declineNote">
         <p>We will miss you dearly.<br>Thank you for letting us know —<br>we will be thinking of you on our special day. 💙</p>
+        <div class="name-pair" style="margin-top:16px;">
+          <div>
+            <label class="flabel">First Name</label>
+            <input class="finput" type="text" id="declineFirst" placeholder="First name">
+          </div>
+          <div>
+            <label class="flabel">Last Name</label>
+            <input class="finput" type="text" id="declineLast" placeholder="Last name">
+          </div>
+        </div>
         <button class="sub-btn" style="max-width:240px;margin:18px auto 0;display:block" id="declineBtn" onclick="submitRsvp()">Confirm Decline</button>
         <div class="error-msg" id="errorMsgDecline"></div>
       </div>
@@ -672,6 +682,12 @@ let eventTier     = 'lunch'; // 'full' or 'lunch'
 // a public link shouldn't grant Solemnisation & Tea Ceremony access.
 let isPublic      = false;
 let publicSide    = null; // 'groom' or 'bride'
+// True for the higher-trust "-plus" public link (?public=groom-plus /
+// ?public=bride-plus) — no pax cap, meant for family and close friends
+// you hand a link to directly rather than post somewhere open. The URL
+// value is deliberately boring-looking ("plus") rather than something
+// like "family" that would signal its own privilege if seen out of context.
+let publicUncapped = false;
 
 // ══════════════════════════════════════════════
 // Petals
@@ -696,13 +712,16 @@ window.addEventListener('DOMContentLoaded', () => {
   isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
 
   const publicParam = (params.get('public') || '').trim().toLowerCase();
-  if (publicParam === 'groom' || publicParam === 'bride') {
-    isPublic   = true;
-    publicSide = publicParam;
+  const publicMatch = publicParam.match(/^(groom|bride)(-plus)?$/);
+  if (publicMatch) {
+    isPublic       = true;
+    publicSide     = publicMatch[1];        // 'groom' or 'bride'
+    publicUncapped = !!publicMatch[2];       // true if '-plus' suffix present
     // Public links default to lunch-only. Solemnisation & Tea Ceremony
     // access requires an explicit &tier=full flag in the URL — never
     // granted by default, since a public link could be shared beyond
-    // the intended audience.
+    // the intended audience. This applies equally to the '-plus' tier —
+    // higher pax trust doesn't imply higher event-tier trust.
     const tierParam = (params.get('tier') || '').trim().toLowerCase();
     eventTier = tierParam === 'full' ? 'full' : 'lunch';
     showPage('pg-envelope');
@@ -796,7 +815,16 @@ function initRsvpForEditing() {
   const wasAttending = guestData.attending === 'yes';
   selectAtt(wasAttending ? 'yes' : 'no');
 
-  if (!wasAttending) return; // decline pre-fill needs nothing further
+  if (!wasAttending) {
+    // Prior decline — pre-fill the name so re-confirming (or switching
+    // back to accept) doesn't ask them to retype it.
+    const priorDecline = (guestData.previousGuests || []).find(g => g.wasDecline);
+    if (priorDecline) {
+      document.getElementById('declineFirst').value = priorDecline.firstName || '';
+      document.getElementById('declineLast').value  = priorDecline.lastName  || '';
+    }
+    return;
+  }
 
   // Pax counter — default to their previous confirmed headcount, not 1
   const prevPax = Math.min(guestData.attending_pax || 1, paxAllowed);
@@ -1489,6 +1517,9 @@ async function submitRsvp() {
 
   // Collect per-guest data from dynamic rows
   let guests = [];
+  let declineFirstName = '';
+  let declineLastName  = '';
+
   if (isYes) {
     const rows = document.querySelectorAll('#guestRows .guest-row');
     let valid = true;
@@ -1515,6 +1546,21 @@ async function submitRsvp() {
       errorEl.classList.add('vis');
       btn.disabled = false;
       btn.textContent = acceptBtnLabel();
+      return;
+    }
+
+  } else {
+    // Declining still records who's responding — without this, a
+    // decline row previously had no name at all, and editing from a
+    // prior acceptance to a decline would silently wipe out the names
+    // that were on file.
+    declineFirstName = document.getElementById('declineFirst').value.trim();
+    declineLastName  = document.getElementById('declineLast').value.trim();
+    if (!declineFirstName || !declineLastName) {
+      errorEl.textContent = 'Please fill in your first and last name.';
+      errorEl.classList.add('vis');
+      btn.disabled = false;
+      btn.textContent = 'Confirm Decline';
       return;
     }
   }
@@ -1549,6 +1595,8 @@ async function submitRsvp() {
       ? document.getElementById('chkAllLunch').checked : null,
     email:      isYes ? document.getElementById('guestEmail').value.trim() : '',
     message:    isYes ? document.getElementById('message').value.trim() : '',
+    declineFirstName: !isYes ? declineFirstName : '',
+    declineLastName:  !isYes ? declineLastName  : '',
   };
 
   try {
