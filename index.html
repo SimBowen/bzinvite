@@ -652,7 +652,8 @@
 // ══════════════════════════════════════════════
 const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev';
 const RSVP_DEADLINE     = new Date('2026-10-31T23:59:59+08:00'); // SGT — edits and new RSVPs locked after this
-const PUBLIC_MAX_PAX    = 2; // cap for the generic (non-personalised) public link — larger groups should use a personal tokened link, which has no such ceiling
+const PUBLIC_MAX_PAX    = 2; // cap for the standard public link (?public=groom / ?public=bride)
+const PUBLIC_PLUS_MAX_PAX = 20; // effectively uncapped for the '-plus' family/close-friends tier — kept finite only to bound the +/- counter UI
 const PHOTO_COUNT      = 5;   // both desktop and mobile use 5 photos
 const SLIDE_DURATION   = 3000; // ms per slide (desktop auto-advance)
 const MOBILE_BREAKPOINT = 768; // px — below this = mobile mode
@@ -1002,9 +1003,12 @@ async function loadPhotosAndStart() {
       // Public link — no token, no guest lookup, just fetch photos.
       // eventTier was already resolved at init time (lunch by default,
       // or full if &tier=full was in the URL).
-      // Capped at PUBLIC_MAX_PAX — anyone bringing more than that should
-      // use a personal tokened link instead, which has no such ceiling.
-      paxAllowed = PUBLIC_MAX_PAX;
+      // Standard public link is capped at PUBLIC_MAX_PAX; the '-plus'
+      // variant (family/close friends) has no real cap — PUBLIC_PLUS_MAX_PAX
+      // is just a generous practical ceiling to keep the +/- counter and
+      // per-guest form rendering sane, matching the pattern already used
+      // for uncapped personal-token invites.
+      paxAllowed = publicUncapped ? PUBLIC_PLUS_MAX_PAX : PUBLIC_MAX_PAX;
       const resp = await fetch(`${WORKER_URL}/api/public-photos`);
       const data = await resp.json();
       clearInterval(fakeTick);
@@ -1583,10 +1587,12 @@ async function submitRsvp() {
     // Public submissions have no existing token — Apps Script creates
     // one on the fly when it sees publicSide set, and files the new row
     // into the matching Groom Guests / Bride Guests tab. publicTier
-    // carries the &tier=full URL flag through — Apps Script re-validates
-    // it rather than trusting the client outright.
+    // carries the &tier=full URL flag through, and publicUncapped
+    // carries whether this was the '-plus' variant — Apps Script
+    // re-validates both rather than trusting the client outright.
     publicSide:      isPublic ? publicSide : null,
     publicTier:      isPublic ? eventTier  : null,
+    publicUncapped:  isPublic ? publicUncapped : false,
     attending:       att,
     guests:          guests,
     attending_solemn: isYes && eventTier === 'full'
