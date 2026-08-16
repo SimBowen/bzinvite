@@ -563,11 +563,6 @@
         </div>
 
         <div>
-          <label class="flabel">Mailing address <span style="opacity:0.5;font-size:9px">(optional — for physical invite)</span></label>
-          <input class="finput" type="text" id="address" placeholder="Block / Street, Unit, Postal Code">
-        </div>
-
-        <div>
           <label class="flabel">A message for the couple <span style="opacity:0.5;font-size:9px">(optional)</span></label>
           <textarea class="ftextarea" id="message" placeholder="Share your wishes or a favourite memory…"></textarea>
         </div>
@@ -823,10 +818,10 @@ function initRsvpForEditing() {
     if (first.lunchAtt  !== null) document.getElementById('chkAllLunch').checked  = first.lunchAtt;
   }
 
-  // Address / message / email — only ever stored once per submission
-  // (on the first guest row), so pull from there if present.
+  // Message / email — only ever stored once per submission (on the
+  // first guest row), so pull from there if present. Address field was
+  // removed from the form, so no longer pre-filled here.
   if (first) {
-    if (first.address) document.getElementById('address').value = first.address;
     if (first.message) document.getElementById('message').value = first.message;
   }
 
@@ -986,7 +981,7 @@ async function loadPhotosAndStart() {
       const data = await resp.json();
       clearInterval(fakeTick);
       photoUrls = data.photos || { landscape: [], portrait: [] };
-      document.getElementById('guestName').textContent = 'Friend';
+      document.getElementById('guestName').textContent = 'Guest';
 
     } else {
       const resp = await fetch(`${WORKER_URL}/api/auth`, {
@@ -1553,7 +1548,6 @@ async function submitRsvp() {
     attending_lunch: isYes && eventTier === 'full'
       ? document.getElementById('chkAllLunch').checked : null,
     email:      isYes ? document.getElementById('guestEmail').value.trim() : '',
-    address:    isYes ? document.getElementById('address').value.trim() : '',
     message:    isYes ? document.getElementById('message').value.trim() : '',
   };
 
