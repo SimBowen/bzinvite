@@ -1509,6 +1509,15 @@ function acceptBtnLabel() {
   return rsvpPrefilled ? 'Update RSVP ♡' : 'Send with Love ♡';
 }
 
+// Practical email format check — not a full RFC 5322 validator (nothing
+// truly is, short of sending mail and seeing what bounces), just enough
+// to catch obvious typos and non-email input before it's relied on for
+// the public link's edit-access flow. Mirrors the same pattern used
+// server-side in Code.gs so the two can't silently disagree.
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 async function submitRsvp() {
   if (!att) { alert('Please select whether you will be attending.'); return; }
   const isYes   = att === 'yes';
@@ -1571,10 +1580,32 @@ async function submitRsvp() {
 
   // Public link submissions have no way back to their RSVP afterward
   // except via an emailed link — so unlike the personalised flow
-  // (where email is optional), it's required here.
+  // (where email is optional), it's required here, and has to actually
+  // look like a deliverable address, not just be non-empty. A malformed
+  // address here would otherwise fail silently later (MailApp just
+  // throws, caught non-fatally in Code.gs), leaving the guest with no
+  // way to ever get their edit link.
   const emailValue = document.getElementById('guestEmail').value.trim();
-  if (isPublic && isYes && !emailValue) {
-    errorEl.textContent = 'Please provide your email so we can send you a link to edit your RSVP later.';
+  if (isPublic && isYes) {
+    if (!emailValue) {
+      errorEl.textContent = 'Please provide your email so we can send you a link to edit your RSVP later.';
+      errorEl.classList.add('vis');
+      btn.disabled = false;
+      btn.textContent = acceptBtnLabel();
+      return;
+    }
+    if (!isValidEmail(emailValue)) {
+      errorEl.textContent = 'That email address doesn\'t look right — please double-check it.';
+      errorEl.classList.add('vis');
+      btn.disabled = false;
+      btn.textContent = acceptBtnLabel();
+      return;
+    }
+  } else if (isYes && emailValue && !isValidEmail(emailValue)) {
+    // Personalised flow: email stays optional, but if they typed
+    // something, it should at least look valid rather than saving
+    // garbage into the Sheet's email column.
+    errorEl.textContent = 'That email address doesn\'t look right — please double-check it, or leave it blank.';
     errorEl.classList.add('vis');
     btn.disabled = false;
     btn.textContent = acceptBtnLabel();
