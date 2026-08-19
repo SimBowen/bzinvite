@@ -654,7 +654,8 @@ const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev';
 const RSVP_DEADLINE     = new Date('2026-10-31T23:59:59+08:00'); // SGT — edits and new RSVPs locked after this
 const PUBLIC_MAX_PAX    = 2; // cap for the standard public link (?public=groom / ?public=bride)
 const PUBLIC_PLUS_MAX_PAX = 20; // effectively uncapped for the '-plus' family/close-friends tier — kept finite only to bound the +/- counter UI
-const PHOTO_COUNT      = 5;   // both desktop and mobile use 5 photos
+const LANDSCAPE_PHOTO_COUNT = 5; // desktop photo count — must match LANDSCAPE_PHOTO_COUNT in worker.js
+const PORTRAIT_PHOTO_COUNT  = 3; // mobile photo count  — must match PORTRAIT_PHOTO_COUNT in worker.js
 const SLIDE_DURATION   = 3000; // ms per slide (desktop auto-advance)
 const MOBILE_BREAKPOINT = 768; // px — below this = mobile mode
 
@@ -989,11 +990,12 @@ function openEnvelope() {
 async function loadPhotosAndStart() {
   const bar     = document.getElementById('plo-bar');
   let fakeProg  = 0;
+  const expectedCount = isMobile ? PORTRAIT_PHOTO_COUNT : LANDSCAPE_PHOTO_COUNT;
 
   // Animate bar while waiting for Worker response
   const fakeTick = setInterval(() => {
-    fakeProg = Math.min(fakeProg + 0.5, PHOTO_COUNT * 0.78);
-    if (bar) bar.style.width = (fakeProg / PHOTO_COUNT * 100) + '%';
+    fakeProg = Math.min(fakeProg + 0.5, expectedCount * 0.78);
+    if (bar) bar.style.width = (fakeProg / expectedCount * 100) + '%';
   }, 160);
 
   let photoUrls = { landscape: [], portrait: [] };
@@ -1074,8 +1076,10 @@ async function loadPhotosAndStart() {
 function buildMontageFromUrls(uris) {
   const wrap = document.getElementById('montageWrap');
 
-  // Ensure we always have PHOTO_COUNT slots even if URLs failed
-  const safeUris = Array.from({ length: PHOTO_COUNT }, (_, i) => uris[i] || null);
+  // Ensure we always have the correct number of slots for this
+  // orientation, even if some URLs failed to come back from the Worker
+  const expectedCount = isMobile ? PORTRAIT_PHOTO_COUNT : LANDSCAPE_PHOTO_COUNT;
+  const safeUris = Array.from({ length: expectedCount }, (_, i) => uris[i] || null);
 
   if (isMobile) {
     buildMobileStrip(wrap, safeUris);
@@ -1175,7 +1179,7 @@ function startMobileProgress() {
     bar.style.width = Math.min((mobileProgElapsed / SLIDE_DURATION) * 100, 100) + '%';
     if (mobileProgElapsed >= SLIDE_DURATION) {
       clearInterval(mobileProgressTimer);
-      if (mobileCur < PHOTO_COUNT - 1) {
+      if (mobileCur < PORTRAIT_PHOTO_COUNT - 1) {
         mobileCur++;
         const strip = document.getElementById('mobileStrip');
         const slideH = strip.clientHeight;
@@ -1202,7 +1206,7 @@ function goToPhoto(n) {
   const prevDot = document.querySelectorAll('.sdot')[cur];
   if (prevDot) prevDot.classList.remove('active');
 
-  cur = ((n % PHOTO_COUNT) + PHOTO_COUNT) % PHOTO_COUNT;
+  cur = ((n % LANDSCAPE_PHOTO_COUNT) + LANDSCAPE_PHOTO_COUNT) % LANDSCAPE_PHOTO_COUNT;
 
   const nextSlide = document.getElementById(`ps${cur}`);
   if (nextSlide) nextSlide.classList.add('active');
@@ -1229,7 +1233,7 @@ function startProgress() {
     bar.style.width = Math.min((progElapsed / SLIDE_DURATION) * 100, 100) + '%';
     if (progElapsed >= SLIDE_DURATION) {
       clearInterval(progressTimer);
-      if (cur < PHOTO_COUNT - 1) {
+      if (cur < LANDSCAPE_PHOTO_COUNT - 1) {
         slideTimer = setTimeout(() => goToPhoto(cur + 1), 60);
       } else {
         slideTimer = setTimeout(() => transitionToDetails(), 800);
