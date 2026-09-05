@@ -1729,6 +1729,16 @@ function pickTimelineIcon(eventName) {
   return TL_ICONS.star;
 }
 
+// "please be seated" only applies to Solemnisation/Tea and the Lunch
+// Banquet — guests are literally being seated for those. Pre-Reception
+// is a standing/mingling segment, not a seated one, so it never gets
+// this note regardless of where it falls in the sorted running order.
+function needsSeatingNote(eventName) {
+  const n = eventName.toLowerCase();
+  if (n.includes('reception') || n.includes('cocktail')) return false;
+  return n.includes('solemn') || n.includes('tea') || n.includes('lunch') || n.includes('dinner') || n.includes('banquet');
+}
+
 function buildTimelineItem(icon, time, label, note) {
   return `<div class="tl-item">
     <div class="tl-icon-wrap">${icon}</div>
@@ -1763,9 +1773,10 @@ async function buildTimeline() {
   const rowClass = events.length >= 4 ? 'tl-row tl-row-4' : 'tl-row';
   const items = events.map((ev, i) => {
     const icon = pickTimelineIcon(ev.event);
-    // "please be seated" note only on the very first milestone — matches
-    // prior hand-authored copy; purely cosmetic, safe to drop if unwanted.
-    const note = i === 0 ? 'please be seated' : '';
+    // Tied to which event this actually is, not its position in the
+    // sorted list — Pre-Reception never gets this note even if it
+    // happens to render first (e.g. on the lunch-only tier).
+    const note = needsSeatingNote(ev.event) ? 'please be seated' : '';
     return buildTimelineItem(icon, fmtScheduleTime(ev.start), ev.event, note);
   }).join('');
 
