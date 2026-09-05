@@ -1335,6 +1335,7 @@ function removeGuest(idx) {
       lastName:     row.querySelector('.g-last')?.value  || '',
       dietary:      row.querySelector('.g-dietary')?.value || 'none',
       dietaryOther: row.querySelector('.g-dietary-other')?.value || '',
+      parking:      row.querySelector('.g-parking')?.checked || false,
     }))
     .filter(g => g.i !== idx);
 
@@ -1370,6 +1371,7 @@ function renderGuestRows(count) {
         lastName:      row.querySelector('.g-last')?.value   || '',
         dietary:       row.querySelector('.g-dietary')?.value || 'none',
         dietaryOther:  row.querySelector('.g-dietary-other')?.value || '',
+        parking:       row.querySelector('.g-parking')?.checked || false,
       });
     });
   } else if (guestData && Array.isArray(guestData.previousGuests) && guestData.previousGuests.length) {
@@ -1379,6 +1381,7 @@ function renderGuestRows(count) {
         lastName:     g.lastName     || '',
         dietary:      g.dietary      || 'none',
         dietaryOther: g.dietaryOther || '',
+        parking:      g.parking      || false,
       });
     });
   }
@@ -1430,7 +1433,13 @@ function injectGuestRow(container, i, prev) {
     </select>
     <div class="dietary-other-wrap ${prev.dietary==='other'?'vis':''}">
       <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${prev.dietaryOther || ''}">
-    </div>`;
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-dark);margin-top:12px;">
+      <input type="checkbox" class="g-parking" ${prev.parking ? 'checked' : ''}
+        style="width:15px;height:15px;accent-color:var(--deep-rose);cursor:pointer;flex-shrink:0;">
+      Need a parking coupon?
+    </label>
+    <p style="font-size:11px;color:var(--text-light);margin-top:4px;padding-left:23px;">Coupons are limited — we'll confirm closer to the date.</p>`;
   container.appendChild(div);
 }
 
@@ -1555,7 +1564,8 @@ async function submitRsvp() {
       const lunchAtt   = eventTier === 'full' && gChkLunch
         ? gChkLunch.checked
         : (eventTier === 'full' ? document.getElementById('chkAllLunch').checked : null);
-      guests.push({ firstName, lastName, dietary, dietaryOther, solemnAtt, lunchAtt });
+      const parking = row.querySelector('.g-parking')?.checked || false;
+      guests.push({ firstName, lastName, dietary, dietaryOther, solemnAtt, lunchAtt, parking });
     });
     if (!valid) {
       errorEl.textContent = 'Please fill in the first and last name for all guests.';
