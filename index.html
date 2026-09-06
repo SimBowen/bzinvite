@@ -623,7 +623,7 @@
       <h3 class="s-title" id="sTitle">Thank you!</h3>
       <p class="s-body"  id="sBody">Your RSVP has been received. We cannot wait to celebrate with you!</p>
       <div id="editLinkBox" style="display:none;margin-top:20px;padding:16px;background:rgba(247,214,224,0.15);border:1px solid rgba(201,169,110,0.2);border-radius:2px;">
-        <p style="font-size:11px;letter-spacing:0.05em;color:var(--text-mid);margin-bottom:8px;">We've also emailed you this link — save it to edit your RSVP later:</p>
+        <p id="editLinkText" style="font-size:11px;letter-spacing:0.05em;color:var(--text-mid);margin-bottom:8px;">We've also emailed you this link — save it to edit your RSVP later:</p>
         <a id="editLinkAnchor" href="#" style="font-size:12px;color:var(--deep-rose);word-break:break-all;text-decoration:underline;"></a>
       </div>
     </div>
@@ -1107,7 +1107,14 @@ async function loadPhotosAndStart() {
       guestData = data.guest;
       paxAllowed = parseInt(guestData.pax) || 1;
       eventTier  = guestData.event_tier || 'lunch';
-      document.getElementById('guestName').textContent = guestData.name || 'Guest';
+      // Public link submissions are stored with name 'Public Guest' in
+      // the Sheet (see createPublicGuestRow_ in Code.gs) since there's
+      // no real name to know — but that internal label shouldn't ever
+      // surface to the guest themselves when they reopen their emailed
+      // edit link, so it's normalized to the same generic 'Guest' the
+      // public flow itself displays.
+      const displayName = guestData.name === 'Public Guest' ? 'Guest' : (guestData.name || 'Guest');
+      document.getElementById('guestName').textContent = displayName;
 
       // Note: guests who already RSVPed are no longer redirected away —
       // they proceed through the invite normally and land on a pre-filled,
@@ -1428,25 +1435,39 @@ function removeGuest(idx) {
 // ── Render guest name + dietary rows ──────────────────────────
 function renderGuestRows(count) {
   const container = document.getElementById('guestRows');
-  // Preserve existing values before re-rendering — but only if the form
-  // already has rows in it. On the very first render (nothing in the DOM
-  // yet), seed instead from guestData.previousGuests if this is an edit
-  // of a prior RSVP, so the guest sees their old answers pre-filled.
+  // Preserve existing values before re-rendering. Two seed sources can
+  // apply at once during edit-mode init: the DOM may already have Guest 1
+  // filled in (from selectAtt('yes')'s own renderGuestRows(1) call that
+  // runs first), while guestData.previousGuests holds the full original
+  // list. Merge them by index rather than picking one source outright —
+  // otherwise re-rendering with a higher count after that first call
+  // would only ever see the single DOM row and lose every other
+  // previously-submitted guest's name back to blank.
   const existing = [];
   const domRows = container.querySelectorAll('.guest-row');
+  const prevGuests = (guestData && Array.isArray(guestData.previousGuests)) ? guestData.previousGuests : [];
 
-  if (domRows.length > 0) {
-    domRows.forEach(row => {
+  for (let i = 0; i < count; i++) {
+    const domRow = domRows[i];
+    // A DOM row only counts as "has real data" if a guest has actually
+    // typed something into it — an untouched blank row (e.g. the
+    // placeholder Guest 1 row created by selectAtt('yes') before this
+    // function's edit-mode seeding has run) shouldn't win over
+    // previousGuests just because it exists in the DOM first.
+    const domFirst = domRow?.querySelector('.g-first')?.value?.trim();
+    const domLast  = domRow?.querySelector('.g-last')?.value?.trim();
+    const domHasData = !!(domFirst || domLast);
+
+    if (domHasData) {
       existing.push({
-        firstName:     row.querySelector('.g-first')?.value  || '',
-        lastName:      row.querySelector('.g-last')?.value   || '',
-        dietary:       row.querySelector('.g-dietary')?.value || 'none',
-        dietaryOther:  row.querySelector('.g-dietary-other')?.value || '',
-        parking:       row.querySelector('.g-parking')?.checked || false,
+        firstName:     domRow.querySelector('.g-first')?.value  || '',
+        lastName:      domRow.querySelector('.g-last')?.value   || '',
+        dietary:       domRow.querySelector('.g-dietary')?.value || 'none',
+        dietaryOther:  domRow.querySelector('.g-dietary-other')?.value || '',
+        parking:       domRow.querySelector('.g-parking')?.checked || false,
       });
-    });
-  } else if (guestData && Array.isArray(guestData.previousGuests) && guestData.previousGuests.length) {
-    guestData.previousGuests.forEach(g => {
+    } else if (prevGuests[i]) {
+      const g = prevGuests[i];
       existing.push({
         firstName:    g.firstName    || '',
         lastName:     g.lastName     || '',
@@ -1454,7 +1475,9 @@ function renderGuestRows(count) {
         dietaryOther: g.dietaryOther || '',
         parking:      g.parking      || false,
       });
-    });
+    } else {
+      existing.push({});
+    }
   }
 
   container.innerHTML = '';
@@ -1756,10 +1779,16 @@ async function submitRsvp() {
       }
 
       // Public submissions get their personal edit link shown on-screen
-      // too, as a fallback in case the emailed copy doesn't arrive.
+      // too, as a fallback in case the emailed copy doesn't arrive —
+      // but the wording only claims an email was sent when Code.gs
+      // confirms one actually was (declines never collect an email at
+      // all, so that claim would otherwise be false on that path).
       if (data.editUrl) {
         document.getElementById('editLinkAnchor').href = data.editUrl;
         document.getElementById('editLinkAnchor').textContent = data.editUrl;
+        document.getElementById('editLinkText').textContent = data.guestEmailSent
+          ? "We've also emailed you this link — save it to edit your RSVP later:"
+          : 'Save this link to edit your RSVP later:';
         document.getElementById('editLinkBox').style.display = 'block';
       }
     } else {
