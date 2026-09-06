@@ -370,6 +370,14 @@
   @keyframes gentlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
   .lock-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,5vw,42px);color:var(--deep-rose);font-weight:300;margin-bottom:14px;}
   .lock-body{font-size:13px;color:var(--text-light);font-weight:300;letter-spacing:0.08em;line-height:1.9;max-width:300px;}
+  #pg-password{padding:40px;text-align:center;animation:fadeIn 1s ease both;}
+  .pw-form{margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:260px;}
+  .pw-input{width:100%;padding:13px 16px;background:rgba(253,246,240,0.7);border:1px solid rgba(201,169,110,0.3);border-radius:2px;font-family:'Jost',sans-serif;font-size:15px;letter-spacing:0.15em;text-align:center;color:var(--text-dark);outline:none;transition:border-color 0.25s;}
+  .pw-input:focus{border-color:var(--rose);}
+  .pw-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--rose),var(--deep-rose));border:none;border-radius:2px;color:white;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;font-weight:300;cursor:pointer;box-shadow:0 4px 20px rgba(196,114,138,0.28);transition:transform 0.2s,box-shadow 0.2s;}
+  .pw-submit:hover{transform:translateY(-2px);box-shadow:0 7px 28px rgba(196,114,138,0.4);}
+  .pw-error{display:none;font-size:12px;color:#b05050;letter-spacing:0.05em;}
+  .pw-error.vis{display:block;}
 </style>
 </head>
 <body>
@@ -379,6 +387,18 @@
   <div class="lock-icon">✉️</div>
   <h1 class="lock-title">Bowen &amp; Zi Qin</h1>
   <p class="lock-body">This invitation is personalised.<br>Please use the unique link from your invitation to open this page.</p>
+</div>
+
+<!-- PASSWORD GATE (public links only) -->
+<div class="page" id="pg-password">
+  <div class="lock-icon">🔒</div>
+  <h1 class="lock-title">Bowen &amp; Zi Qin</h1>
+  <p class="lock-body">Please enter the password shared with you to open this invitation.</p>
+  <div class="pw-form">
+    <input class="pw-input" type="password" id="pwInput" placeholder="Password" inputmode="numeric" autocomplete="off" onkeydown="if(event.key==='Enter')checkPublicPassword()">
+    <button class="pw-submit" onclick="checkPublicPassword()">Unlock</button>
+    <p class="pw-error" id="pwError">That password doesn't look right — please try again.</p>
+  </div>
 </div>
 
 <!-- ENVELOPE -->
@@ -651,7 +671,17 @@
 // CONFIGURATION
 // ══════════════════════════════════════════════
 const WORKER_URL       = 'https://wedding-guest-platform.newob.workers.dev';
-const RSVP_DEADLINE     = new Date('2026-10-31T23:59:59+08:00'); // SGT — edits and new RSVPs locked after this
+const RSVP_DEADLINE     = new Date('2026-10-06T23:59:59+08:00'); // SGT — edits and new RSVPs locked after this
+
+// Client-side gate on the public (?public=...) links only — personalised
+// ?id=TOKEN links are never affected. This is a deterrent, not real
+// security: since the site is static (GitHub Pages, no server-side
+// logic), the check happens in browser-visible JS and the password
+// value below is readable by anyone who views page source. It stops
+// casual link-sharing beyond the intended audience and unsophisticated
+// scraping; it does not stop someone who deliberately inspects the code.
+const PUBLIC_PASSWORD    = '061226';
+const PUBLIC_PW_STORAGE_KEY = 'bz_public_pw_ok'; // sessionStorage — re-prompts each new browser session
 const PUBLIC_MAX_PAX    = 2; // cap for the standard public link (?public=groom / ?public=bride)
 const PUBLIC_PLUS_MAX_PAX = 20; // effectively uncapped for the '-plus' family/close-friends tier — kept finite only to bound the +/- counter UI
 const LANDSCAPE_PHOTO_COUNT = 5; // desktop photo count — must match LANDSCAPE_PHOTO_COUNT in worker.js
@@ -726,7 +756,15 @@ window.addEventListener('DOMContentLoaded', () => {
     // higher pax trust doesn't imply higher event-tier trust.
     const tierParam = (params.get('tier') || '').trim().toLowerCase();
     eventTier = tierParam === 'full' ? 'full' : 'lunch';
-    showPage('pg-envelope');
+
+    // Password gate — applies to all four public variants (groom,
+    // bride, groom-plus, bride-plus). Already-unlocked this browser
+    // session skips straight through; otherwise show the password page.
+    if (sessionStorage.getItem(PUBLIC_PW_STORAGE_KEY) === 'true') {
+      showPage('pg-envelope');
+    } else {
+      showPage('pg-password');
+    }
     return;
   }
 
@@ -758,6 +796,27 @@ function showPage(id) {
     } else {
       initRsvpForEditing();
     }
+  }
+}
+
+// Verifies the password entered on pg-password against PUBLIC_PASSWORD.
+// On success, remembers it for the rest of this browser session
+// (sessionStorage — cleared when the tab/browser closes, so returning
+// visitors on a new session are re-prompted) and proceeds to the
+// envelope exactly as an already-unlocked visit would.
+function checkPublicPassword() {
+  const input = document.getElementById('pwInput');
+  const error = document.getElementById('pwError');
+  const value = input.value.trim();
+
+  if (value === PUBLIC_PASSWORD) {
+    sessionStorage.setItem(PUBLIC_PW_STORAGE_KEY, 'true');
+    error.classList.remove('vis');
+    showPage('pg-envelope');
+  } else {
+    error.classList.add('vis');
+    input.value = '';
+    input.focus();
   }
 }
 
