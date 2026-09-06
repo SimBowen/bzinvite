@@ -1395,6 +1395,22 @@ function renderGuestRows(count) {
   if (eventTier === 'full') renderGuestSegments(count);
 }
 
+// Escapes text before interpolating it into an HTML attribute or
+// innerHTML — guest-submitted names and dietary text are stored and
+// later re-rendered when a guest reopens their link to edit an RSVP
+// (see injectGuestRow below). Without escaping, a name like
+// `" onmouseover="alert(1)` would break out of the value="" attribute
+// it's placed in and inject an arbitrary HTML attribute/event handler —
+// a stored XSS that would fire again on that guest's own next visit.
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── Shared row-builder ────────────────────────────────────────
 // Used by both renderGuestRows (pax +/- driven) and removeGuest
 // (drops one specific guest) so the two can never drift out of sync
@@ -1417,11 +1433,11 @@ function injectGuestRow(container, i, prev) {
     <div class="name-pair">
       <div>
         <label class="flabel">First Name</label>
-        <input class="finput g-first" type="text" placeholder="First name" value="${prev.firstName || ''}">
+        <input class="finput g-first" type="text" placeholder="First name" value="${escapeHtml(prev.firstName)}">
       </div>
       <div>
         <label class="flabel">Last Name</label>
-        <input class="finput g-last" type="text" placeholder="Last name" value="${prev.lastName || ''}">
+        <input class="finput g-last" type="text" placeholder="Last name" value="${escapeHtml(prev.lastName)}">
       </div>
     </div>
     <label class="flabel">Dietary Requirements</label>
@@ -1432,7 +1448,7 @@ function injectGuestRow(container, i, prev) {
       <option value="other"       ${prev.dietary==='other'       ?'selected':''}>Other</option>
     </select>
     <div class="dietary-other-wrap ${prev.dietary==='other'?'vis':''}">
-      <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${prev.dietaryOther || ''}">
+      <input class="finput g-dietary-other" type="text" placeholder="Please specify…" value="${escapeHtml(prev.dietaryOther)}">
     </div>
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-dark);margin-top:12px;">
       <input type="checkbox" class="g-parking" ${prev.parking ? 'checked' : ''}
