@@ -1407,14 +1407,20 @@ function removeGuest(idx) {
 
   // Snapshot current field values in DOM order, minus the removed index
   const remaining = rows
-    .map((row, i) => ({
-      i,
-      firstName:    row.querySelector('.g-first')?.value || '',
-      lastName:     row.querySelector('.g-last')?.value  || '',
-      dietary:      row.querySelector('.g-dietary')?.value || 'none',
-      dietaryOther: row.querySelector('.g-dietary-other')?.value || '',
-      parking:      row.querySelector('.g-parking')?.checked || false,
-    }))
+    .map((row, i) => {
+      const solemnChk = document.querySelector(`.g-chk-solemn[data-idx="${i}"]`);
+      const lunchChk  = document.querySelector(`.g-chk-lunch[data-idx="${i}"]`);
+      return {
+        i,
+        firstName:    row.querySelector('.g-first')?.value || '',
+        lastName:     row.querySelector('.g-last')?.value  || '',
+        dietary:      row.querySelector('.g-dietary')?.value || 'none',
+        dietaryOther: row.querySelector('.g-dietary-other')?.value || '',
+        parking:      row.querySelector('.g-parking')?.checked || false,
+        solemnAtt:    solemnChk ? solemnChk.checked : null,
+        lunchAtt:     lunchChk  ? lunchChk.checked  : null,
+      };
+    })
     .filter(g => g.i !== idx);
 
   paxSelected = remaining.length;
@@ -1429,7 +1435,7 @@ function removeGuest(idx) {
     injectGuestRow(container, newIdx, g);
   });
 
-  if (eventTier === 'full') renderGuestSegments(paxSelected);
+  if (eventTier === 'full') renderGuestSegments(paxSelected, remaining);
 }
 
 // ── Render guest name + dietary rows ──────────────────────────
@@ -1459,12 +1465,20 @@ function renderGuestRows(count) {
     const domHasData = !!(domFirst || domLast);
 
     if (domHasData) {
+      // Also read this guest's current solemn/lunch checkbox state (if
+      // the per-guest override row exists yet) so re-rendering doesn't
+      // discard a change the guest just made before previousGuests had
+      // a chance to matter.
+      const domSolemnChk = document.querySelector(`.g-chk-solemn[data-idx="${i}"]`);
+      const domLunchChk  = document.querySelector(`.g-chk-lunch[data-idx="${i}"]`);
       existing.push({
         firstName:     domRow.querySelector('.g-first')?.value  || '',
         lastName:      domRow.querySelector('.g-last')?.value   || '',
         dietary:       domRow.querySelector('.g-dietary')?.value || 'none',
         dietaryOther:  domRow.querySelector('.g-dietary-other')?.value || '',
         parking:       domRow.querySelector('.g-parking')?.checked || false,
+        solemnAtt:     domSolemnChk ? domSolemnChk.checked : null,
+        lunchAtt:      domLunchChk  ? domLunchChk.checked  : null,
       });
     } else if (prevGuests[i]) {
       const g = prevGuests[i];
@@ -1474,6 +1488,8 @@ function renderGuestRows(count) {
         dietary:      g.dietary      || 'none',
         dietaryOther: g.dietaryOther || '',
         parking:      g.parking      || false,
+        solemnAtt:    g.solemnAtt !== undefined ? g.solemnAtt : null,
+        lunchAtt:     g.lunchAtt  !== undefined ? g.lunchAtt  : null,
       });
     } else {
       existing.push({});
@@ -1485,8 +1501,12 @@ function renderGuestRows(count) {
     injectGuestRow(container, i, existing[i] || {});
   }
 
-  // Re-render per-guest segment rows if full tier
-  if (eventTier === 'full') renderGuestSegments(count);
+  // Re-render per-guest segment rows if full tier — pass the same seed
+  // data used for names/dietary above, so a guest's previously saved
+  // solemnAtt/lunchAtt (e.g. Guest 2 having unchecked Solemnisation)
+  // survives into the checkboxes instead of every row just mirroring
+  // whatever the "select all" checkbox happens to show right now.
+  if (eventTier === 'full') renderGuestSegments(count, existing);
 }
 
 // Escapes text before interpolating it into an HTML attribute or
@@ -1555,7 +1575,7 @@ function injectGuestRow(container, i, prev) {
 
 // Render per-guest segment override checkboxes
 // Only shown when pax > 1 (pointless for a single guest)
-function renderGuestSegments(count) {
+function renderGuestSegments(count, existing) {
   const container = document.getElementById('guestSegmentRows');
   if (!container) return;
 
@@ -1570,9 +1590,22 @@ function renderGuestSegments(count) {
     </p>`;
 
   for (let i = 0; i < count; i++) {
-    const label   = i === 0 ? 'Guest 1 (You)' : `Guest ${i + 1}`;
-    const solemnChecked = document.getElementById('chkAllSolemn')?.checked !== false;
-    const lunchChecked  = document.getElementById('chkAllLunch')?.checked  !== false;
+    const label = i === 0 ? 'Guest 1 (You)' : `Guest ${i + 1}`;
+    // A specific guest's own saved solemnAtt/lunchAtt (from editing a
+    // prior RSVP) takes priority when present — this is what was
+    // missing before: every row used to just mirror the "select all"
+    // checkbox's current state regardless of what that individual guest
+    // had actually chosen last time. Only fall back to "select all"
+    // when there's no per-guest value yet (a first-time RSVP, or a
+    // newly added guest row with nothing saved for it).
+    const seed = existing && existing[i] ? existing[i] : {};
+    const solemnChecked = seed.solemnAtt !== null && seed.solemnAtt !== undefined
+      ? seed.solemnAtt
+      : document.getElementById('chkAllSolemn')?.checked !== false;
+    const lunchChecked = seed.lunchAtt !== null && seed.lunchAtt !== undefined
+      ? seed.lunchAtt
+      : document.getElementById('chkAllLunch')?.checked !== false;
+
     const row = document.createElement('div');
     row.style.cssText = 'padding:8px 0;border-bottom:1px solid rgba(168,207,224,0.1);display:flex;flex-direction:column;gap:6px;';
     row.innerHTML = `
@@ -1595,6 +1628,13 @@ function renderGuestSegments(count) {
       </div>`;
     container.appendChild(row);
   }
+
+  // The overall "select all" checkboxes should reflect the per-guest
+  // state we just rendered (e.g. show indeterminate if Guest 2 differs
+  // from Guest 1), not be left showing whatever they said before this
+  // guest-level data was known.
+  syncOverallCheckbox('solemn');
+  syncOverallCheckbox('lunch');
 }
 
 // Toggle all per-guest checkboxes when overall is clicked
